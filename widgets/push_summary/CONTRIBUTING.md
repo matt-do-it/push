@@ -2,24 +2,30 @@
 
 ## Installation
 
-* `git clone <repository-url>`
-* `cd push-summary`
-* `yarn install`
+- `git clone <repository-url>`
+- `cd summary`
+- `yarn install`
 
 ## Linting
 
-* `yarn lint`
-* `yarn lint:fix`
+- `yarn lint`
+- `yarn lint:fix`
+
+## Building the addon
+
+- `cd summary`
+- `yarn build`
 
 ## Running tests
 
-* `yarn test` – Runs the test suite on the current Ember version
-* `yarn test:ember --server` – Runs the test suite in "watch mode"
-* `yarn test:ember-compatibility` – Runs the test suite against multiple Ember versions
+- `cd test-app`
+- `yarn test` – Runs the test suite on the current Ember version
+- `yarn test:watch` – Runs the test suite in "watch mode"
 
-## Running the dummy application
+## Running the test application
 
-* `yarn start`
-* Visit the dummy application at [http://localhost:4200](http://localhost:4200).
+- `cd test-app`
+- `yarn start`
+- Visit the test application at [http://localhost:4200](http://localhost:4200).
 
 For more information on using ember-cli, visit [https://cli.emberjs.com/release/](https://cli.emberjs.com/release/).
