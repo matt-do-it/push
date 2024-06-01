@@ -1,4 +1,8 @@
 {
-  "presets": [["@glimmerx/babel-preset"] ,"@babel/preset-env", "@babel/preset-typescript"],
+  "presets": [
+    ["@glimmerx/babel-preset"],
+    "@babel/preset-env",
+    "@babel/preset-typescript"
+  ],
   "plugins": [["@babel/plugin-proposal-decorators", { "version": "legacy" }]]
 }

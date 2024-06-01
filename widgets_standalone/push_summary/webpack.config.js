@@ -1,44 +1,69 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
-const webpack = require('webpack')
+const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
+const webpack = require("webpack");
+const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
-  entry: './src/index.js',
-  mode: 'development',
+  entry: {
+    app: "./src/app.js",
+    standalone: {
+    	import: "./src/standalone.js",
+    	library: {
+			type: "module"
+    	}
+
+    }},
+  mode: "development",
+  experiments: {
+    outputModule: true,
+  },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Output Management',
-      filename: 'index.html',
-      template: 'index.html'
+      title: "Integrated app",
+      filename: "index.html",
+      template: "index.html",
+      chunks: ["app"],
     }),
+    new HtmlWebpackPlugin({
+      title: "Output Management",
+      filename: "standalone.html",
+      template: "standalone.html",
+      inject: false,
+      scriptLoading: "module",
+      chunks: ["standalone"],
+    }),
+    new CopyPlugin({
+      patterns: [{ from: "vendor", to: "vendor" }],
+    }),
+
     new WebpackManifestPlugin({}),
     new webpack.ProvidePlugin({
-		Buffer: ['buffer', 'Buffer'],  // ...
-	})
+      Buffer: ["buffer", "Buffer"], // ...
+    }),
   ],
   resolve: {
-      extensions: ['.ts', '.js', '.json', '.gts', '.gjs'],
-    },
-  output: {
-    filename: 'main.js',
-    path: path.resolve(__dirname, 'dist'),
+    extensions: [".ts", ".js", ".json", ".gts", ".gjs"],
   },
-  
-   module: {
+  output: {
+    filename: "[name].js",
+    path: path.resolve(__dirname, "dist"),
+  },
+
+  module: {
     rules: [
       {
         test: /\.css$/i,
-        use: ['style-loader', 'css-loader', 'postcss-loader'],
+        use: ["style-loader", "css-loader", "postcss-loader"],
       },
-       {
+      {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
-        type: 'asset/resource',
+        type: "asset/resource",
       },
-        {
-          test: /\.(js|mjs|ts|gts|gjs)$/,
-          use: ['babel-loader', '@glimmerx/webpack-loader'],
-        },
-    ]
+      {
+        test: /\.(js|mjs|ts|gts|gjs)$/,
+        use: ["babel-loader", "@glimmerx/webpack-loader"],
+      },
+    ],
   },
 };

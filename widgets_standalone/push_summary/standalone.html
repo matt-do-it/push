@@ -1,0 +1,60 @@
+<!doctype html>
+
+<html>
+  <head> 
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <script type="module">
+    	import { DataService, PushSummaryComponent, pushEmbed } from './standalone.js';
+    
+		document.addEventListener("DOMContentLoaded", (event) => {
+			let dataService = new DataService();
+			dataService.loadFrom([
+			  {
+				"date": "2024-07-01",
+				campaign: "COKE",
+				impressions: 500,
+			  },
+			  {
+				"date": "2024-07-01",
+				campaign: "PEPSI",
+				impressions: 700,
+			  },
+			  {
+				"date": "2024-04-01",
+				campaign: "COKE",
+				impressions: 200,
+			  },
+			  {
+				"date": "2024-04-01",
+				campaign: "PEPSI",
+				impressions: 300,
+			  },
+			  {
+				"date": "2024-01-01",
+				campaign: "SPRITE",
+				impressions: 100,
+			  },
+			  {
+				"date": "2024-01-01",
+				campaign: "SPRITE",
+				impressions: 700,
+			  },
+			]);
+			dataService.groupColumns = ["date", "campaign"];
+			dataService.filter = "";
+			dataService.rollup = { impressions: "op.sum(d.impressions)" };
+			dataService.derive = { value: "d.impressions" };
+
+			pushEmbed(PushSummaryComponent, "widget", dataService, 
+			 { title: "Impressions", benchmarkTitle: "Kampagnen" });
+		});
+    </script>
+  </head>
+  <body class="bg-base-300 py-8">
+    <div class="container mx-auto">
+      <div class="grid grid-cols-1">
+        <div id="widget"></div>
+      </div>
+    </div>
+  </body>
+</html>
