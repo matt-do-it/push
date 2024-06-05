@@ -6,11 +6,11 @@
 }
 
 .widget-view {
-	@apply bg-base-100 rounded p-4 relative;
+  @apply bg-base-100 rounded p-4 relative;
 }
 
 .widget-edit {
-	@apply bg-base-100 rounded p-4 relative;
+  @apply bg-base-100 rounded p-4 relative;
 }
 
 .widget .widget-title {
@@ -33,7 +33,7 @@
 }
 
 .widget .widget-trend {
-	@apply grid grid-cols-2;
+  @apply grid grid-cols-2;
 }
 
 .widget .widget-trend .left {
@@ -41,14 +41,13 @@
   @apply text-xs grid;
 }
 
-
 .widget .widget-trend .right {
   text-align: right;
   @apply text-xs grid;
 }
 
 .widget-toggle {
-	text-align: right;
+  text-align: right;
 }
 
 .widget-edit-title {
@@ -57,5 +56,4 @@
 
 .widget-edit {
   @apply pb-2;
-
 }

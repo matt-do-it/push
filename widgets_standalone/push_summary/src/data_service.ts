@@ -29,6 +29,19 @@ export default class DataService {
     this.dataTable = from(objects);
   }
 
+  async loadSpec(spec) {
+    if (spec.values) {
+      this.loadFrom(spec.values);
+    }
+    if (spec.url) {
+      this.loadArrow(spec.url);
+    }
+    this.filter = spec.filter;
+    this.groupColumns = spec.groupColumns;
+    this.rollup = spec.rollup;
+    this.derive = spec.derive;
+  }
+
   get dataTable() {
     return this.dataTable;
   }

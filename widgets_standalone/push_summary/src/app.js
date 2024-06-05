@@ -24,32 +24,32 @@ presetService.presets = [
     title: "Campaigns",
     values: [
       {
-        "date": "2024-07-01",
+        date: "2024-07-01",
         campaign: "COKE",
         impressions: 500,
       },
       {
-        "date": "2024-07-01",
+        date: "2024-07-01",
         campaign: "PEPSI",
         impressions: 700,
       },
       {
-        "date": "2024-04-01",
+        date: "2024-04-01",
         campaign: "COKE",
         impressions: 200,
       },
       {
-        "date": "2024-04-01",
+        date: "2024-04-01",
         campaign: "PEPSI",
         impressions: 300,
       },
       {
-        "date": "2024-01-01",
+        date: "2024-01-01",
         campaign: "SPRITE",
         impressions: 100,
       },
       {
-        "date": "2024-01-01",
+        date: "2024-01-01",
         campaign: "SPRITE",
         impressions: 700,
       },

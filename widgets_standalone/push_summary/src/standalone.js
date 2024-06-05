@@ -18,4 +18,20 @@ export default async function pushEmbed(component, element, dataService, args) {
   });
 }
 
-export { pushEmbed, PushSummaryComponent, DataService };
+function embed(component, dataServiceSpec, args) {
+  let element = document.createElement("div");
+  let dataService = new DataService(); 
+  dataService.loadSpec(dataServiceSpec);
+  console.log(dataServiceSpec);
+  renderComponent(PushSummaryComponent, {
+    element: element,
+    args: args,
+    services: {
+      data: dataService,
+      dateCalc: new DateCalcService(),
+    },
+  });
+  return element;
+}
+
+export { embed, PushSummaryComponent, DataService };

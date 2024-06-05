@@ -81,9 +81,9 @@ class PushSummaryComponent extends Component {
   }
 
   get benchmarkTitle() {
-  	return this.args.benchmarkTitle;
+    return this.args.benchmarkTitle;
   }
-  
+
   get totalTable() {
     try {
       let totalTable = this.data.groupedTable.reify();

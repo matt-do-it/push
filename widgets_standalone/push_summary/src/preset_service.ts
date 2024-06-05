@@ -10,15 +10,6 @@ export default class PresetService {
   constructor() {}
 
   async load(dataService, preset) {
-    if (preset.values) {
-      dataService.loadFrom(preset.values);
-    }
-    if (preset.url) {
-      dataService.loadArrow(preset.url);
-    }
-    dataService.filter = preset.filter;
-    dataService.groupColumns = preset.groupColumns;
-    dataService.rollup = preset.rollup;
-    dataService.derive = preset.derive;
+    dataService.loadSpec(preset);
   }
 }
