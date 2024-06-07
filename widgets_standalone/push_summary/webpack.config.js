@@ -8,13 +8,13 @@ module.exports = {
   entry: {
     app: "./src/app.js",
     standalone: {
-    	import: "./src/standalone.js",
-    	library: {
-			type: "module"
-    	}
-
-    }},
-  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+      import: "./src/standalone.js",
+      library: {
+        type: "module",
+      },
+    },
+  },
+  mode: process.env.NODE_ENV === "production" ? "production" : "development",
   experiments: {
     outputModule: true,
   },

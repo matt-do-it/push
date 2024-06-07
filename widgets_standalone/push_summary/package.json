@@ -42,8 +42,14 @@
     "buffer": "^6.0.3",
     "d3": "^7.9.0",
     "dayjs": "^1.11.11",
+    "postcss-prefix-selector": "^1.16.1",
     "vega": "^5.29.0",
     "vega-embed": "^6.25.0",
     "vega-lite": "^5.18.1"
-  }
+  },
+  "browserslist": [
+    "defaults",
+    "not dead",
+    "not op_mini all"
+  ]
 }

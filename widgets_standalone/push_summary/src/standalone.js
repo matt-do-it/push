@@ -20,7 +20,7 @@ export default async function pushEmbed(component, element, dataService, args) {
 
 function embed(component, dataServiceSpec, args) {
   let element = document.createElement("div");
-  let dataService = new DataService(); 
+  let dataService = new DataService();
   dataService.loadSpec(dataServiceSpec);
   console.log(dataServiceSpec);
   renderComponent(PushSummaryComponent, {

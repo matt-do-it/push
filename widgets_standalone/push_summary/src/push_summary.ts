@@ -46,7 +46,7 @@ class PushSummaryComponent extends Component {
 
   get date() {
     try {
-      return agg(this.data.groupedTable, op.max(this.dateColumn));
+      return agg(this.data.summarizedTable, op.max(this.dateColumn));
     } catch (error) {
       return null;
     }
@@ -56,78 +56,78 @@ class PushSummaryComponent extends Component {
     return this.args.display || "isoweek";
   }
 
-  get totalsFilter() {
-    return this.args.totalsFilter;
+  get windowFilter() {
+    return this.args.windowFilter;
   }
 
-  get totalsFilterParams() {
-    return this.args.totalsFilterParams;
+  get windowFilterParams() {
+    return this.args.windowFilterParams;
   }
 
   get showBenchmark() {
-    if (this.args.showBenchmark !== undefined) {
-      return this.args.showBenchmark;
-    } else {
-      return true;
-    }
-  }
-
-  get showTrend() {
-    if (this.args.showTrend !== undefined) {
-      return this.args.showTrend;
-    } else {
-      return true;
-    }
+    return this.windowFilter != null;
   }
 
   get benchmarkTitle() {
     return this.args.benchmarkTitle;
   }
 
-  get totalTable() {
-    try {
-      let totalTable = this.data.groupedTable.reify();
-
-      if (this.date) {
-        totalTable = totalTable
-          .params({
-            dateSet: [this.date],
-            dateColumn: this.dateColumn,
-          })
-          .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
-      }
-      if (this.totalsFilter) {
-        totalTable = totalTable
-          .params(this.totalsFilterParams)
-          .filter(this.totalsFilter);
-      }
-
-      if (this.data.rollup) {
-        totalTable = totalTable.rollup(this.data.rollup);
-      }
-      if (this.data.derive) {
-        totalTable = totalTable.derive(this.data.derive);
-      }
-      return totalTable;
-    } catch (error) {
-      console.log("totalTable failed: " + error);
-      return null;
-    }
-  }
-
-  get trendTable() {
+  get latestFullTable() {
     try {
       if (this.date == null) {
         return null;
       }
 
-      let trendTable = this.data.groupedTable.reify().groupby(this.dateColumn);
+      let totalTable = this.data.summarizedTable;
 
-      if (this.totalsFilter) {
-        trendTable = trendTable
-          .params(this.totalsFilterParams)
-          .filter(this.totalsFilter);
+      totalTable = totalTable
+        .params({
+          dateSet: [this.date],
+          dateColumn: this.dateColumn,
+        })
+        .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
+
+      return totalTable;
+    } catch (error) {
+      console.log("latestFullTable failed: " + error);
+      return null;
+    }
+  }
+
+  get latestWindowedTable() {
+    try {
+      if (this.date == null) {
+        return null;
       }
+
+      let totalTable = this.data.summarizedTable;
+
+      totalTable = totalTable
+        .params({
+          dateSet: [this.date],
+          dateColumn: this.dateColumn,
+        })
+        .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
+
+      if (this.windowFilter) {
+        totalTable = totalTable
+          .params(this.windowFilterParams)
+          .filter(this.windowFilter);
+      }
+      return totalTable;
+    } catch (error) {
+      console.log("latestWindowedTable failed: " + error);
+      return null;
+    }
+  }
+
+  get trendWindowedTable() {
+    try {
+      if (this.date == null) {
+        return null;
+      }
+
+      let trendTable = this.data.summarizedTable;
 
       trendTable = trendTable
         .params({
@@ -136,60 +136,28 @@ class PushSummaryComponent extends Component {
         })
         .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
 
-      if (this.data.rollup) {
-        trendTable = trendTable.rollup(this.data.rollup);
-      } else {
-        let r = {};
-        r[this.valueColumn] = op.sum(this.valueColumn);
-        trendTable = trendTable.rollup(r);
-      }
-      if (this.data.derive) {
-        trendTable = trendTable.derive(this.data.derive);
+      if (this.windowFilter) {
+        trendTable = trendTable
+          .params(this.windowFilterParams)
+          .filter(this.windowFilter);
       }
 
-      //TODO : Check if three values
+      if (trendTable.numRows() != 3) {
+        return null;
+      }
       return trendTable;
     } catch (error) {
-      console.log("trendTable failed: " + error);
-      return null;
-    }
-  }
-
-  get summarizedTable() {
-    try {
-      let summarizedTable = this.data.groupedTable.reify();
-
-      if (this.date) {
-        summarizedTable = summarizedTable
-          .params({
-            dateSet: [this.date],
-            dateColumn: this.dateColumn,
-          })
-          .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
-      }
-      if (this.totalsFilter) {
-        totalTable = totalTable
-          .params(this.totalsFilterParams)
-          .filter(this.totalsFilter);
-      }
-
-      if (this.data.rollup) {
-        summarizedTable = summarizedTable.rollup(this.data.rollup);
-      }
-      if (this.data.derive) {
-        summarizedTable = summarizedTable.derive(this.data.derive);
-      }
-
-      return summarizedTable;
-    } catch (error) {
-      console.log("summarytable failed: " + error);
+      console.log("trendWindowedTable failed: " + error);
       return null;
     }
   }
 
   get value() {
-    if (this.totalTable && this.totalTable.columnIndex(this.valueColumn) > -1) {
-      return agg(this.totalTable, op.sum(this.valueColumn));
+    if (
+      this.latestWindowedTable &&
+      this.latestWindowedTable.columnIndex(this.valueColumn) > -1
+    ) {
+      return this.latestWindowedTable.get(this.valueColumn, 0);
     } else {
       return null;
     }
@@ -197,10 +165,10 @@ class PushSummaryComponent extends Component {
 
   get median() {
     if (
-      this.summarizedTable &&
-      this.summarizedTable.columnIndex(this.valueColumn) > -1
+      this.latestFullTable &&
+      this.latestFullTable.columnIndex(this.valueColumn) > -1
     ) {
-      return agg(this.summarizedTable, op.median(this.valueColumn));
+      return agg(this.latestFullTable, op.median(this.valueColumn));
     } else {
       return null;
     }
@@ -208,10 +176,10 @@ class PushSummaryComponent extends Component {
 
   get q25() {
     if (
-      this.summarizedTable &&
-      this.summarizedTable.columnIndex(this.valueColumn) > -1
+      this.latestFullTable &&
+      this.latestFullTable.columnIndex(this.valueColumn) > -1
     ) {
-      return agg(this.summarizedTable, op.quantile(this.valueColumn, 0.25));
+      return agg(this.latestFullTable, op.quantile(this.valueColumn, 0.25));
     } else {
       return null;
     }
@@ -219,22 +187,29 @@ class PushSummaryComponent extends Component {
 
   get q75() {
     if (
-      this.summarizedTable &&
-      this.summarizedTable.columnIndex(this.valueColumn) > -1
+      this.latestFullTable &&
+      this.latestFullTable.columnIndex(this.valueColumn) > -1
     ) {
-      return agg(this.summarizedTable, op.quantile(this.valueColumn, 0.75));
+      return agg(this.latestFullTable, op.quantile(this.valueColumn, 0.75));
     } else {
       return null;
     }
   }
 
   get trend() {
-    return this.value / this.comparison - 1;
+    if (this.value && this.comparison) {
+      return this.value / this.comparison - 1;
+    } else {
+      return null;
+    }
   }
 
   get comparison() {
-    if (this.trendTable && this.trendTable.columnIndex(this.valueColumn) > -1) {
-      return agg(this.trendTable, op.mean(this.valueColumn));
+    if (
+      this.trendWindowedTable &&
+      this.trendWindowedTable.columnIndex(this.valueColumn) > -1
+    ) {
+      return agg(this.trendWindowedTable, op.mean(this.valueColumn));
     } else {
       return null;
     }
@@ -243,6 +218,7 @@ class PushSummaryComponent extends Component {
   get previousDate() {
     return this.dateCalc.previousDate(this.date, this.display, 1);
   }
+
   @action
   drawCanvas(canvas) {
     const ctx = canvas.getContext("2d");
@@ -368,7 +344,7 @@ class PushSummaryComponent extends Component {
 setComponentTemplate(
   precompileTemplate(
     `
-      <div class="widget">
+      <div class="push widget">
         {{#unless this.editMode}}
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date}}</div>

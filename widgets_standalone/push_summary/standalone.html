@@ -1,63 +1,74 @@
 <!doctype html>
 
 <html>
-  <head> 
+  <head>
     <title><%= htmlWebpackPlugin.options.title %></title>
     <script type="module">
-	//	import { DataService, PushSummaryComponent, pushEmbed, embedSummary } from 'https://cdn.jsdelivr.net/gh/alldaysunshine/ml-push/widgets_standalone/push_summary/dist/standalone.js';
-    	import { DataService, PushSummaryComponent, embed } from './standalone.js';
-    
-		document.addEventListener("DOMContentLoaded", (event) => {
-			let dataServiceSpec = {
-				values: [
-			  {
-				"date": "2024-07-01",
-				campaign: "COKE",
-				impressions: 500,
-			  },
-			  {
-				"date": "2024-07-01",
-				campaign: "PEPSI",
-				impressions: 700,
-			  },
-			  {
-				"date": "2024-04-01",
-				campaign: "COKE",
-				impressions: 200,
-			  },
-			  {
-				"date": "2024-04-01",
-				campaign: "PEPSI",
-				impressions: 300,
-			  },
-			  {
-				"date": "2024-01-01",
-				campaign: "SPRITE",
-				impressions: 100,
-			  },
-			  {
-				"date": "2024-01-01",
-				campaign: "SPRITE",
-				impressions: 700,
-			  },
-			],
-			groupColumns: ["date", "campaign"],
-			filter: "", 
-			rollup: { impressions: "op.sum(d.impressions)" },
-			derive: { value:"d.impressions" }
-			};
-			 
-			 let div = embed(PushSummaryComponent, dataServiceSpec);
-			 document.getElementById("container").appendChild(div);
-			 
-		});
+      //	import { DataService, PushSummaryComponent, pushEmbed, embedSummary } from 'https://cdn.jsdelivr.net/gh/alldaysunshine/ml-push/widgets_standalone/push_summary/dist/standalone.js';
+      import {
+        DataService,
+        PushSummaryComponent,
+        embed,
+      } from "./standalone.js";
+
+      document.addEventListener("DOMContentLoaded", (event) => {
+        let dataServiceSpec = {
+          values: [
+            {
+              date: "2024-07-01",
+              campaign: "COKE",
+              impressions: 500,
+            },
+            {
+              date: "2024-07-01",
+              campaign: "PEPSI",
+              impressions: 700,
+            },
+            {
+              date: "2024-04-01",
+              campaign: "COKE",
+              impressions: 200,
+            },
+            {
+              date: "2024-04-01",
+              campaign: "PEPSI",
+              impressions: 300,
+            },
+            {
+              date: "2024-01-01",
+              campaign: "COKE",
+              impressions: 100,
+            },
+            {
+              date: "2024-01-01",
+              campaign: "PEPSI",
+              impressions: 700,
+            },
+          ],
+          groupColumns: ["campaign", "date"],
+          filter: "",
+          rollup: { impressions: "op.sum(d.impressions)" },
+          derive: { value: "d.impressions" },
+        };
+
+        let div = embed(PushSummaryComponent, dataServiceSpec, {
+          title: "Impressions",
+          benchmarkTitle: "Kampagnen",
+          windowFilter: "op.equal(d.campaign, $.campaign)",
+          windowFilterParams: { campaign: "COKE" },
+        });
+
+        document.getElementById("container").appendChild(div);
+      });
     </script>
   </head>
-  <body class="bg-base-300 py-8">
-    <div class="container mx-auto">
-      <div class="grid grid-cols-1">
-        <div id="widget"></div>
-        <div id="container"></div>
+  <body>
+    <div class="push bg-base-300 py-64">
+      <div class="push container mx-auto">
+        <div class="grid grid-cols-1">
+          <div id="widget"></div>
+          <div id="container"></div>
+        </div>
       </div>
     </div>
   </body>

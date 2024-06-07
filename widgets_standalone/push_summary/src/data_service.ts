@@ -80,18 +80,6 @@ export default class DataService {
     }
   }
 
-  get groupedTable() {
-    try {
-      if (this.groupColumns == undefined || this.groupColumns.length == 0) {
-        return this.filteredTable;
-      }
-      return this.filteredTable.groupby(this.groupColumns);
-    } catch (error) {
-      console.log("group columns invalid");
-      return this.filteredTable;
-    }
-  }
-
   get groupedTables() {
     try {
       if (
@@ -188,5 +176,20 @@ export default class DataService {
       return true;
     }
     return false;
+  }
+
+  get summarizedTable() {
+    try {
+      if (this.groupColumns == undefined || this.groupColumns.length == 0) {
+        return this.filteredTable;
+      }
+      return this.filteredTable
+        .groupby(this.groupColumns)
+        .rollup(this.rollup)
+        .derive(this.derive);
+    } catch (error) {
+      console.log("group columns invalid");
+      return null;
+    }
   }
 }
