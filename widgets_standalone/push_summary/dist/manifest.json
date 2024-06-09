@@ -1,7 +1,5 @@
 {
   "app.js": "auto/app.js",
-  "standalone.js": "auto/standalone.js",
   "vendor/nycflights13.arrow": "auto/vendor/nycflights13.arrow",
-  "standalone.html": "auto/standalone.html",
   "index.html": "auto/index.html"
 }
