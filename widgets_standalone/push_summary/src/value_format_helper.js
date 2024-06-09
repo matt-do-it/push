@@ -1,12 +1,26 @@
 import { helper } from "@glimmerx/helper";
 import * as d3 from "d3";
 
-export const numberFormatter = d3.format(",.1f");
+import currentLocale from "./locale";
 
-export default helper(([value, format]) => {
+export const numberFormatter = currentLocale().format(",.1f");
+export const rateFormatter = currentLocale().format(".2%");
+
+export const multiFormatter = function (value, format) {
   if (value == null) {
     return "NA";
   }
 
-  return numberFormatter(value);
+  if (format == "number") {
+    return numberFormatter(value);
+  }
+  if (format == "rate") {
+    return rateFormatter(value);
+  }
+
+  return "Unknown format";
+};
+
+export default helper(([value, format]) => {
+  return multiFormatter(value, format);
 });

@@ -1,6 +1,4 @@
 import { LIFETIME } from "@starbeam/timeline";
-import { DEBUG_RENDERER } from "@starbeam/universal";
-import { Stopwatch } from "./stopwatch";
 import { renderComponent } from "@glimmerx/core";
 
 import PushSummaryComponent from "./push_summary";

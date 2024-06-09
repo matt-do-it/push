@@ -35,7 +35,7 @@ setComponentTemplate(
   <div class="label">
     <span class="label-text">{{@title}}</span>
   </div>
-  <input type="text" value={{@value}} placeholder="" class="input input-bordered w-full max-w-xs" {{on "input" this.update}}/>
+  <input type="text" value={{@value}} autocomplete='off' spellcheck='false' autocorrect='off' placeholder="" class="input input-bordered w-full max-w-xs" {{on "input" this.update}}/>
 </label>    `,
     {
       strictMode: true,

@@ -30,10 +30,8 @@ export default setModifierManager(
       this.resizeObserver = new ResizeObserver(
         function (entries) {
           for (const entry of entries) {
-            console.log(entry);
             if (entry.contentRect) {
               this.element.width = entry.contentRect.width;
-              console.log(entry.contentRect.width);
               const canvas = this.element;
               let action = args.positional[0];
               action(canvas);

@@ -12,64 +12,98 @@
       } from "./standalone.js";
 
       document.addEventListener("DOMContentLoaded", (event) => {
-        let dataServiceSpec = {
-          values: [
+      	var values = [
             {
               date: "2024-07-01",
-              campaign: "COKE",
-              impressions: 500,
+              group: "Group A",
+              value: 500,
             },
             {
               date: "2024-07-01",
-              campaign: "PEPSI",
-              impressions: 700,
+              group: "Group B",
+              value: 700,
             },
             {
               date: "2024-04-01",
-              campaign: "COKE",
-              impressions: 200,
+              group: "Group A",
+              value: 200,
             },
             {
               date: "2024-04-01",
-              campaign: "PEPSI",
-              impressions: 300,
+              group: "Group B",
+              value: 300,
             },
             {
               date: "2024-01-01",
-              campaign: "COKE",
-              impressions: 100,
+              group: "Group A",
+              value: 100,
             },
             {
               date: "2024-01-01",
-              campaign: "PEPSI",
-              impressions: 700,
+              group: "Group B",
+              value: 700,
             },
-          ],
-          groupColumns: ["campaign", "date"],
-          filter: "",
-          rollup: { impressions: "op.sum(d.impressions)" },
-          derive: { value: "d.impressions" },
-        };
-
-        let div = embed(PushSummaryComponent, dataServiceSpec, {
-          title: "Impressions",
-          benchmarkTitle: "Kampagnen",
-          windowFilter: "op.equal(d.campaign, $.campaign)",
-          windowFilterParams: { campaign: "COKE" },
+          ];
+          
+          
+      	let dataServiceTotal = new DataService(); 
+      	dataServiceTotal.loadFrom(values);
+        dataServiceTotal.groupColumns = ["date"];
+        dataServiceTotal.rollup = { value: "op.sum(d.value)" };
+          
+        let totals = embed(PushSummaryComponent, dataServiceTotal, {
+          title: "Zusammenfassung",
+          benchmarkTitle: "Groups",
         });
 
-        document.getElementById("container").appendChild(div);
+        document.getElementById("totals").appendChild(totals);
+
+      	let dataServiceByGroup = new DataService(); 
+      	dataServiceByGroup.loadFrom(values);
+        dataServiceByGroup.groupColumns = ["group", "date"];
+        dataServiceByGroup.rollup = { value: "op.sum(d.value)" };
+          
+        let byGroup = embed(PushSummaryComponent, dataServiceByGroup, {
+          title: "Zusammenfassung",
+          benchmarkTitle: "Groups",
+        });
+
+        document.getElementById("byGroup").appendChild(byGroup);
+
+        let withSelection = embed(PushSummaryComponent, dataServiceByGroup, {
+          title: "Zusammenfassung",
+          benchmarkTitle: "Groups",
+          windowFilter: "op.equal(d.group, $.group)",
+          windowFilterParams: { group: "Group A" },
+        });
+
+        document.getElementById("withSelection").appendChild(withSelection);
+
       });
     </script>
   </head>
   <body>
-    <div class="push bg-base-300 py-64">
-      <div class="push container mx-auto">
-        <div class="grid grid-cols-1">
-          <div id="widget"></div>
-          <div id="container"></div>
-        </div>
-      </div>
+    <div class="bg-base-300 py-8">
+      	<div class="push container mx-auto">
+      		<div class="prose pt-4 pb-2">
+	      		<h1>Totals</h1>
+	      	</div>
+			<div class="grid grid-cols-1">
+			  <div id="totals"></div>
+			</div>
+      		<div class="prose pt-4 pb-2">
+	      		<h1>Grouped</h1>
+	      	</div>
+			<div class="grid grid-cols-1">
+			  <div id="byGroup"></div>
+			</div>
+      		<div class="prose pt-4 pb-2">
+	      		<h1>Grouped with selection</h1>
+	      	</div>
+			<div class="grid grid-cols-1">
+			  <div id="withSelection"></div>
+			</div>
+		</div>
     </div>
   </body>
 </html>

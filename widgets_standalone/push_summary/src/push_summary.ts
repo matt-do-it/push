@@ -3,6 +3,7 @@ import { service } from "@glimmerx/service";
 import { on, action } from "@glimmer/modifier";
 import { table, agg, op } from "arquero";
 import { helper } from "@glimmerx/helper";
+import { cached } from "@glimmer/tracking";
 
 import valueFormatHelper, { numberFormatter } from "./value_format_helper";
 import displayFormatHelper from "./display_format_helper";
@@ -33,17 +34,24 @@ class PushSummaryComponent extends Component {
   @tracked editMode;
 
   get title() {
-    return this.args.title;
+    if (this.isAggregated) {
+      return this.args.title + " - Median";
+    } else {
+      return this.args.title;
+    }
   }
 
+  @cached
   get dateColumn() {
     return this._dateColumn || this.args.dateColumn || "date";
   }
 
+  @cached
   get valueColumn() {
     return this._valueColumn || this.args.valueColumn || "value";
   }
 
+  @cached
   get date() {
     try {
       return agg(this.data.summarizedTable, op.max(this.dateColumn));
@@ -52,27 +60,28 @@ class PushSummaryComponent extends Component {
     }
   }
 
-  get display() {
-    return this.args.display || "isoweek";
+  @cached
+  get format() {
+    return this.args.format || "number";
   }
 
+  @cached
+  get display() {
+    return this.args.display || "isoquarter";
+  }
+
+  @cached
   get windowFilter() {
     return this.args.windowFilter;
   }
 
+  @cached
   get windowFilterParams() {
     return this.args.windowFilterParams;
   }
 
-  get showBenchmark() {
-    return this.windowFilter != null;
-  }
-
-  get benchmarkTitle() {
-    return this.args.benchmarkTitle;
-  }
-
-  get latestFullTable() {
+  @cached
+  get latestTotalTable() {
     try {
       if (this.date == null) {
         return null;
@@ -94,6 +103,7 @@ class PushSummaryComponent extends Component {
     }
   }
 
+  @cached
   get latestWindowedTable() {
     try {
       if (this.date == null) {
@@ -121,6 +131,7 @@ class PushSummaryComponent extends Component {
     }
   }
 
+  @cached
   get trendWindowedTable() {
     try {
       if (this.date == null) {
@@ -131,7 +142,7 @@ class PushSummaryComponent extends Component {
 
       trendTable = trendTable
         .params({
-          dateSet: ["2024-07-01", "2024-04-01", "2024-01-01"],
+          dateSet: this.trendDateSet,
           dateColumn: this.dateColumn,
         })
         .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
@@ -142,9 +153,6 @@ class PushSummaryComponent extends Component {
           .filter(this.windowFilter);
       }
 
-      if (trendTable.numRows() != 3) {
-        return null;
-      }
       return trendTable;
     } catch (error) {
       console.log("trendWindowedTable failed: " + error);
@@ -152,50 +160,77 @@ class PushSummaryComponent extends Component {
     }
   }
 
+  @cached
+  get trendDateSet() {
+    return [
+      this.date,
+      this.dateCalc.previousDate(this.date, this.display, 1),
+      this.dateCalc.previousDate(this.date, this.display, 2),
+    ];
+  }
+
+  @cached
+  get isAggregated() {
+    if (
+      this.latestWindowedTable &&
+      this.latestWindowedTable.columnIndex(this.valueColumn) > -1 &&
+      this.latestWindowedTable.numRows() > 1
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @cached
   get value() {
     if (
       this.latestWindowedTable &&
       this.latestWindowedTable.columnIndex(this.valueColumn) > -1
     ) {
-      return this.latestWindowedTable.get(this.valueColumn, 0);
+      return agg(this.latestWindowedTable, op.median(this.valueColumn));
     } else {
       return null;
     }
   }
 
+  @cached
   get median() {
     if (
-      this.latestFullTable &&
-      this.latestFullTable.columnIndex(this.valueColumn) > -1
+      this.latestTotalTable &&
+      this.latestTotalTable.columnIndex(this.valueColumn) > -1
     ) {
-      return agg(this.latestFullTable, op.median(this.valueColumn));
+      return agg(this.latestTotalTable, op.median(this.valueColumn));
     } else {
       return null;
     }
   }
 
+  @cached
   get q25() {
     if (
-      this.latestFullTable &&
-      this.latestFullTable.columnIndex(this.valueColumn) > -1
+      this.latestTotalTable &&
+      this.latestTotalTable.columnIndex(this.valueColumn) > -1
     ) {
-      return agg(this.latestFullTable, op.quantile(this.valueColumn, 0.25));
+      return agg(this.latestTotalTable, op.quantile(this.valueColumn, 0.25));
     } else {
       return null;
     }
   }
 
+  @cached
   get q75() {
     if (
-      this.latestFullTable &&
-      this.latestFullTable.columnIndex(this.valueColumn) > -1
+      this.latestTotalTable &&
+      this.latestTotalTable.columnIndex(this.valueColumn) > -1
     ) {
-      return agg(this.latestFullTable, op.quantile(this.valueColumn, 0.75));
+      return agg(this.latestTotalTable, op.quantile(this.valueColumn, 0.75));
     } else {
       return null;
     }
   }
 
+  @cached
   get trend() {
     if (this.value && this.comparison) {
       return this.value / this.comparison - 1;
@@ -204,19 +239,33 @@ class PushSummaryComponent extends Component {
     }
   }
 
+  @cached
   get comparison() {
     if (
       this.trendWindowedTable &&
       this.trendWindowedTable.columnIndex(this.valueColumn) > -1
     ) {
-      return agg(this.trendWindowedTable, op.mean(this.valueColumn));
+      let dateIndex = this.data.groupColumns.indexOf("date");
+
+      let groupColumns = this.data.groupColumns.filter(
+        function (e) {
+          return e != this.dateColumn;
+        }.bind(this),
+      );
+
+      let rolledupTable = this.trendWindowedTable
+        .reify()
+        .groupby(groupColumns)
+        .rollup({
+          mean: op.mean(this.valueColumn),
+          values: op.count(),
+        })
+        .filter((d) => op.equal(d.values, 3));
+
+      return agg(rolledupTable, op.median("mean"));
     } else {
       return null;
     }
-  }
-
-  get previousDate() {
-    return this.dateCalc.previousDate(this.date, this.display, 1);
   }
 
   @action
@@ -239,6 +288,14 @@ class PushSummaryComponent extends Component {
       d3.max([0, this.value, this.median, this.q25, this.q75]) * 1.1;
 
     let xScale = d3.scaleLinear([0, maxValue], [0, canvasWidth]);
+
+    // Clear background
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(
+      0,
+		0,
+      canvasWidth,
+      canvasHeight);
 
     // Draw background
     ctx.fillStyle = "#F2F2F2";
@@ -347,28 +404,25 @@ setComponentTemplate(
       <div class="push widget">
         {{#unless this.editMode}}
       	<div class="widget-view">
-			<div class="widget-date">{{dateFormatHelper this.date}}</div>
+			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
 			<div class="widget-title">{{this.title}}</div>
-			<div class="widget-value">{{valueFormatHelper this.value}}</div>
+			<div class="widget-value">{{valueFormatHelper this.value this.format}}</div>
 			<div class="widget-canvas">
 				<canvas width="300" height="40" {{canvasModifier this.drawCanvas}}></canvas>
 			</div>	
-			{{#if this.showBenchmark}}
 			<div class="widget-benchmark">
-				{{this.benchmarkTitle}}: 
-					Q25: {{valueFormatHelper this.q25}}
+					Q25: {{valueFormatHelper this.q25 this.format}}
 					- 
-					M: {{valueFormatHelper this.median}}
+					M: {{valueFormatHelper this.median this.format}}
 					- 
-					Q75: {{valueFormatHelper this.q75}}
+					Q75: {{valueFormatHelper this.q75 this.format}}
 			</div>
-			{{/if}}
 			<div class="widget-trend">
-				<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison}} </div>
+				<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}} </div>
 				<div class="right {{trendColorHelper this.trend}}">{{trendFormatHelper this.trend}}</div>
 			</div>
 			<div class="widget-toggle">
-				<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
 			</div>
 		</div>
 		{{/unless}}

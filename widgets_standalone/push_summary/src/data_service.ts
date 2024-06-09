@@ -15,6 +15,9 @@ export default class DataService {
   @tracked rollup;
   @tracked derive;
 
+  @tracked windowFilter;
+  @tracked windowFilterParams;
+
   constructor() {
     this.dataTable = table();
 
@@ -27,19 +30,6 @@ export default class DataService {
 
   async loadFrom(objects) {
     this.dataTable = from(objects);
-  }
-
-  async loadSpec(spec) {
-    if (spec.values) {
-      this.loadFrom(spec.values);
-    }
-    if (spec.url) {
-      this.loadArrow(spec.url);
-    }
-    this.filter = spec.filter;
-    this.groupColumns = spec.groupColumns;
-    this.rollup = spec.rollup;
-    this.derive = spec.derive;
   }
 
   get dataTable() {
@@ -98,7 +88,7 @@ export default class DataService {
         return [];
       }
     } catch (error) {
-      console.log("group columns invalid");
+      console.log("group columns invalid: " + error);
       return [];
     }
   }
@@ -188,7 +178,16 @@ export default class DataService {
         .rollup(this.rollup)
         .derive(this.derive);
     } catch (error) {
-      console.log("group columns invalid");
+      console.log(
+        "group columns invalid: " +
+          error +
+          this.groupColumns +
+          this.rollup +
+          this.derive,
+      );
+      console.log(this.groupColumns);
+      console.log(this.derive);
+      console.log(this.rollup);
       return null;
     }
   }
