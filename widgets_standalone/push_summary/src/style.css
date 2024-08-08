@@ -2,59 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-
 .widget {
 }
 
 .widget-view {
-  @apply bg-base-100 rounded p-4 shadow relative;
+    @apply bg-base-100 rounded p-4 shadow relative;
 }
 
 .widget-edit {
-  @apply bg-base-100 rounded p-4 shadow relative;
+    @apply bg-base-100 rounded p-4 shadow relative;
 }
 
 .widget .widget-title {
-  @apply font-bold;
+    @apply font-bold;
 }
 
 .widget .widget-value {
-  @apply text-4xl font-bold;
+    @apply text-4xl font-bold;
 }
 
 .widget .widget-table {
-  @apply table;
+    @apply table;
 }
 .widget .widget-canvas {
-  @apply py-2;
+    @apply py-2;
 }
 
 .widget .widget-benchmark {
-  @apply text-xs grid;
+    @apply text-xs grid;
 }
 
 .widget .widget-trend {
-  @apply grid grid-cols-2;
+    @apply grid grid-cols-2;
 }
 
 .widget .widget-trend .left {
-  text-align: left;
-  @apply text-xs grid;
+    text-align: left;
+    @apply text-xs grid;
 }
 
 .widget .widget-trend .right {
-  text-align: right;
-  @apply text-xs grid;
+    text-align: right;
+    @apply text-xs grid;
 }
 
 .widget-toggle {
-  text-align: right;
+    text-align: right;
 }
 
 .widget-edit-title {
-  @apply font-bold;
+    @apply font-bold;
 }
 
 .widget-edit {
-  @apply pb-2;
+    @apply pb-2;
 }
