@@ -374,6 +374,7 @@ class PushHierarchyComponent extends Component {
 				height: this.yMap(d.y1) - this.yMap(d.y0) - 2,
 				color: color(d.data.color),
 				formattedValue: valueFormatHelper([d.value, this.format]), 
+				node: d
 			};
 
 			let texts = []

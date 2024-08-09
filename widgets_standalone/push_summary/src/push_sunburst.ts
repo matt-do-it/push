@@ -41,7 +41,7 @@ class PushSunburstComponent extends Component {
 
 	@tracked timer = null
     @tracked shouldAnimate = true
-	
+		
     get title() {
         if (this.args.title) {
             return this.args.title
@@ -321,12 +321,11 @@ class PushSunburstComponent extends Component {
 
         // Calculate layout for treemapData
         const root = treemapLayout(treemapData)
-        console.log(root);
+
         return root
     }
 
     get dataSelectedRoot() {
-        console.log(this.dataRoot);
         if (this.selectedNode) {
             return this.selectedNode
         } else {
@@ -350,18 +349,18 @@ class PushSunburstComponent extends Component {
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
 		let relevantNodes = [];
-		
-		relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children);
-		
 		let ancestors = this.dataSelectedRoot.ancestors(); 
 		
 		ancestors.forEach(function(e) {
 			let others = e.children.filter(function(d) {
+			return true; 
 				return !ancestors.includes(d);
 			});
 			relevantNodes = relevantNodes.concat(others);
 		});
-				
+		
+		relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children);
+		
 		return relevantNodes.map(function(d) {
 			let animated = {
 				arcStart: d.x0, 
@@ -370,6 +369,7 @@ class PushSunburstComponent extends Component {
 				levelEnd: d.y1,
 				color: color(d.data.color),
 				formattedValue: valueFormatHelper([d.value, this.format]), 
+				node: d
 			};
 
 			let texts = []
@@ -417,34 +417,39 @@ class PushSunburstComponent extends Component {
         
         this.animatedNodes.forEach(
             function (d, i) {
-            
                 ctx.fillStyle = d.color
 				ctx.strokeStyle = "white"
 				ctx.strokeWidth = 2
             	
-            	let width = 200; 
-            	let radius = 50 + (d.levelStart - 1) * width; 
+            	let baseRadius = this.width / 6; 
+            	let baseOffset = this.width / 20; 
+            	
+            	let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius; 
+            	let outerRadius = baseOffset + (d.levelStart) * baseRadius; 
             	
 				ctx.lineWidth = 3
 
-				var innerStartX = this.width / 2 + Math.cos(d.arcStart) * (radius );
-				var innerStartY = this.height / 2 + Math.sin(d.arcStart) * (radius ); 
+				var innerStartX = this.width / 2 + Math.cos(d.arcStart) * (innerRadius );
+				var innerStartY = this.height / 2 + Math.sin(d.arcStart) * (innerRadius ); 
 
-				var innerEndX = this.width / 2 + Math.cos(d.arcEnd) * (radius );
-				var innerEndY = this.height / 2 + Math.sin(d.arcEnd) * (radius ); 
+				var innerEndX = this.width / 2 + Math.cos(d.arcEnd) * (innerRadius );
+				var innerEndY = this.height / 2 + Math.sin(d.arcEnd) * (innerRadius ); 
 				
-				var outerEndX = this.width / 2 + Math.cos(d.arcEnd) * (radius + width);
-				var outerEndY = this.height / 2 + Math.sin(d.arcEnd) * (radius + width); 
+				var outerEndX = this.width / 2 + Math.cos(d.arcEnd) * (outerRadius);
+				var outerEndY = this.height / 2 + Math.sin(d.arcEnd) * (outerRadius); 
 				
-				var outerStartX = this.width / 2 + Math.cos(d.arcStart) * (radius + width);
-				var outerStartY = this.height / 2 + Math.sin(d.arcStart) * (radius + width); 
-				
+				var outerStartX = this.width / 2 + Math.cos(d.arcStart) * (outerRadius);
+				var outerStartY = this.height / 2 + Math.sin(d.arcStart) * (outerRadius); 
+
+				var outerTextX = this.width / 2 + Math.cos((d.arcStart + d.arcEnd) / 2) * outerRadius + 5;
+				var outerTextY = this.height / 2 + Math.sin((d.arcStart + d.arcEnd) / 2) * outerRadius + 5;
+			
             	ctx.beginPath();
 
 				ctx.moveTo(innerStartX, innerStartY);
-				ctx.arc(this.width / 2, this.height / 2, radius, d.arcStart, d.arcEnd);
+				ctx.arc(this.width / 2, this.height / 2, innerRadius, d.arcStart, d.arcEnd);
 				ctx.lineTo(outerEndX, outerEndY);
-				ctx.arc(this.width / 2, this.height / 2, radius + width, d.arcEnd, d.arcStart, true);
+				ctx.arc(this.width / 2, this.height / 2, outerRadius, d.arcEnd, d.arcStart, true);
 				ctx.lineTo(innerStartX, innerStartY);
 
 				ctx.fill();
@@ -454,30 +459,44 @@ class PushSunburstComponent extends Component {
                 let levels = 0
                 let texts = []
 
-                ctx.fillStyle = 'white'
+                ctx.fillStyle = 'black'
                 ctx.textBaseline = 'top'
                 ctx.font = 'bold 12px sans-serif'
+				ctx.textAlign = 'left';
 
                 let textOffset = 2
 
+ 
                 for (let i = 0; i < d.texts.length; i++) {
+
+				ctx.save();
+ 				ctx.translate(outerTextX, outerTextY);
+ 				ctx.rotate((d.arcStart + d.arcEnd) / 2);
+
                     ctx.fillText(
                         d.texts[i],
-                        d.x + 2,
-                        d.y + textOffset
+                        0,
+                        textOffset
                     )
-                    textOffset = textOffset + 14
+                    textOffset = textOffset + 14;
+                    ctx.restore();
                 }
 
-                ctx.fillStyle = 'white'
+                ctx.fillStyle = 'black'
                 ctx.textBaseline = 'top'
                 ctx.font = '12px sans-serif'
+				ctx.textAlign = 'left';
+
+				ctx.save();
+ 				ctx.translate(outerTextX, outerTextY);
+ 				ctx.rotate((d.arcStart + d.arcEnd) / 2);
 
                 ctx.fillText(
                     d.formattedValue,
-                    d.x + 2,
-                    d.y + textOffset
+                    0,
+                    textOffset
                 )
+                    ctx.restore();
             }.bind(this)
         )
     }
@@ -537,6 +556,8 @@ class PushSunburstComponent extends Component {
     toggleEditMode() {
         this.editMode = !this.editMode
     }
+    
+    
 
     @action
     mouseClick(event) {
@@ -544,16 +565,38 @@ class PushSunburstComponent extends Component {
         var x = event.clientX - rect.left
         var y = event.clientY - rect.top
 
-        let selectedElement = this.dataSelectedRoot.children.find(function (d) {
-            return x >= this.xMap(d.x0) && y >= this.yMap(d.y0) && x <= this.xMap(d.x1) && y <= this.yMap(d.y1)
+		var deltaX = this.width / 2 - x;
+		var deltaY = this.height /2 - y;
+		var rad = Math.atan2(deltaY, deltaX) + Math.PI; // In radians
+		var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            let baseRadius = this.width / 6; 
+            let baseOffset = this.width / 20; 
+            	
+		if (!this.dataSelectedRoot.children) {
+			return false; 
+
+		}
+        let selectedElement = this.animatedNodes.find(function (d) {
+            let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius; 
+            let outerRadius = baseOffset + (d.levelStart) * baseRadius; 
+			
+			let startAngle = d.arcStart; 
+			let endAngle = d.arcEnd; 
+			console.log(innerRadius);
+        	if (rad >= startAngle && rad <= endAngle && 
+        		distance >= innerRadius && distance <= outerRadius) {
+	
+				return true;         		
+        	} else {
+        		return false; 
+        	}
         }.bind(this))
 
         if (
-            selectedElement &&
-            selectedElement.children &&
-            selectedElement.children.length > 1
+            selectedElement
         ) {
-            this.selectedNode = selectedElement
+            this.selectedNode = selectedElement.node;
             this.shouldAnimate = true; 
         }
     }
