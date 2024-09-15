@@ -429,7 +429,8 @@ class PushSummaryComponent extends Component {
 setComponentTemplate(
     precompileTemplate(
         `
-      <div class="push widget">
+      <div class="push">
+      <div class="widget">
         {{#unless this.editMode}}
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
@@ -470,6 +471,7 @@ setComponentTemplate(
 			</div>
     	</div>
     	{{/if}}
+  	</div>
   	</div>
     `,
         {

@@ -24,6 +24,14 @@ export default class DataService {
         this.groupColumns = []
     }
 
+  async fromArrow(arrowTable) {
+  	console.log(arrowTable);
+  	var d = fromArrow(arrowTable);
+  	alert("hey");
+  	console.log(d);
+  	this.dataTable = d; 
+  }
+
     async loadArrow(url) {
         this.dataTable = await loadArrow(url)
     }
