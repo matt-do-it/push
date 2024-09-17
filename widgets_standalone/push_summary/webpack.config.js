@@ -75,12 +75,12 @@ module.exports = [
             outputModule: true,
         },
         devServer: {
-  headers: {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-    "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
-  }
-},
+  			headers: {
+    			"Access-Control-Allow-Origin": "*",
+    			"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+    			"Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+  			}
+		},
         mode:
             process.env.NODE_ENV === 'production'
                 ? 'production'
@@ -144,4 +144,64 @@ module.exports = [
             ],
         },
     },
+    {
+        entry: {
+            jupyter: './src/jupyter.js',
+        },
+        experiments: {
+            outputModule: true,
+        },
+        mode: "production",
+        plugins: [
+            new CopyPlugin({
+                patterns: [{ from: 'vendor', to: 'vendor' }],
+            }),
+
+            new WebpackManifestPlugin({}),
+            new webpack.ProvidePlugin({
+                Buffer: ['buffer', 'Buffer'],
+            }),
+        ],
+        resolve: {
+            extensions: ['.ts', '.js', '.json', '.gts', '.gjs'],
+        },
+        output: {
+            filename: '[name].js',
+            path: path.resolve(__dirname, '../../integration/'),
+            library: {
+                type: 'module',
+            },
+        },
+
+        module: {
+            rules: [
+                {
+                    test: /\.css$/i,
+                    use: [
+                        'style-loader',
+                        'css-loader',
+                        {
+                            loader: 'postcss-loader',
+                            options: {
+                                postcssOptions: {
+                                    config: path.resolve(
+                                        __dirname,
+                                        'postcss.standalone.js'
+                                    ),
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
+                    test: /\.(png|svg|jpg|jpeg|gif)$/i,
+                    type: 'asset/resource',
+                },
+                {
+                    test: /\.(js|mjs|ts|gts|gjs)$/,
+                    use: ['babel-loader', '@glimmerx/webpack-loader'],
+                },
+            ],
+        },
+    }
 ]

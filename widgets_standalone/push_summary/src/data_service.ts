@@ -1,5 +1,5 @@
 import { tracked } from '@glimmerx/component'
-import { table, op, loadArrow, from } from 'arquero'
+import { table, op, loadArrow, from, fromArrow } from 'arquero'
 
 const UNIQUE_COLS_PCTG = 0.1
 const UNIQUE_COLS_PCTG_NMB = 0.01
@@ -25,10 +25,7 @@ export default class DataService {
     }
 
   async fromArrow(arrowTable) {
-  	console.log(arrowTable);
   	var d = fromArrow(arrowTable);
-  	alert("hey");
-  	console.log(d);
   	this.dataTable = d; 
   }
 
