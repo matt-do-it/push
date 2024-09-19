@@ -430,48 +430,48 @@ setComponentTemplate(
     precompileTemplate(
         `
       <div class="push">
-      <div class="widget">
-        {{#unless this.editMode}}
-      	<div class="widget-view">
-			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-			<div class="widget-title">{{this.title}}</div>
-			<div class="widget-value">{{valueFormatHelper this.value this.format}}</div>
-			<div class="widget-canvas">
-				<canvas width="300" height="40" {{canvasModifier this}}></canvas>
-			</div>	
-			<div class="widget-benchmark">
-					Q25: {{valueFormatHelper this.q25 this.format}}
-					- 
-					M: {{valueFormatHelper this.median this.format}}
-					- 
-					Q75: {{valueFormatHelper this.q75 this.format}}
+		  <div class="widget">
+			{{#unless this.editMode}}
+			<div class="widget-view">
+				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
+				<div class="widget-title">{{this.title}}</div>
+				<div class="widget-value">{{valueFormatHelper this.value this.format}}</div>
+				<div class="widget-canvas">
+					<canvas width="300" height="40" {{canvasModifier this}}></canvas>
+				</div>	
+				<div class="widget-benchmark">
+						Q25: {{valueFormatHelper this.q25 this.format}}
+						- 
+						M: {{valueFormatHelper this.median this.format}}
+						- 
+						Q75: {{valueFormatHelper this.q75 this.format}}
+				</div>
+				<div class="widget-trend">
+					<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}} </div>
+					<div class="right {{trendColorHelper this.trend}}">{{trendFormatHelper this.trend}}</div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+				</div>
 			</div>
-			<div class="widget-trend">
-				<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}} </div>
-				<div class="right {{trendColorHelper this.trend}}">{{trendFormatHelper this.trend}}</div>
+			{{/unless}}
+			{{#if this.editMode}}
+			<div class="widget-edit">
+				<div class="widget-edit-title">Bearbeiten</div>
+				<div class="grid grid-cols-3 gap-4">
+					<div class="field">
+						<InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
+					</div>
+					<div class="field">
+						<InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
+					</div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+				</div>
 			</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
+			{{/if}}
 		</div>
-		{{/unless}}
-		{{#if this.editMode}}
-    	<div class="widget-edit">
-    		<div class="widget-edit-title">Bearbeiten</div>
-    		<div class="grid grid-cols-3 gap-4">
-    			<div class="field">
-    			    <InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
-				</div>
-    			<div class="field">
-    			    <InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
-				</div>
-    		</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
-    	</div>
-    	{{/if}}
-  	</div>
   	</div>
     `,
         {
@@ -486,8 +486,7 @@ setComponentTemplate(
                 trendColorHelper,
                 dateFormatHelper,
 
-                InputComponent,
-                TextareaComponent,
+                InputComponent
             },
         }
     ),

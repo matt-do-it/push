@@ -6,11 +6,11 @@
 }
 
 .widget-view {
-    @apply bg-base-100 rounded p-4 shadow relative;
+    @apply bg-base-100 rounded-xl p-4 border shadow relative;
 }
 
 .widget-edit {
-    @apply bg-base-100 rounded p-4 shadow relative;
+    @apply bg-base-100 rounded-xl p-4 border shadow relative;
 }
 
 .widget .widget-title {

@@ -3,6 +3,7 @@
 DIRNAME="$(realpath $(dirname $0))"
 SRCHOME="$DIRNAME/../../../"
 
+npx webpack build 
 
 echo "Deploying production"
 Rscript -e 'rsconnect::deployApp("dist/",

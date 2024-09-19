@@ -27,7 +27,6 @@ class PushDebugComponent extends Component {
     }
 
     get groupNames() {
-        return ''
         return this.data.groupNames
     }
 

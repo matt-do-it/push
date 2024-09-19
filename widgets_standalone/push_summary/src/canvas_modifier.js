@@ -31,32 +31,36 @@ export default setModifierManager(
                 function (entries) {
                     for (const entry of entries) {
                         if (entry.contentRect) {
-                            this.element.width = entry.contentRect.width
-                            this.element.height = entry.contentRect.height
+							if ( entry.contentRect.width > 0 && entry.contentRect.height > 0) {
 
-                            const canvasContainer = this.element
+	                            this.element.width = entry.contentRect.width
+    	                        this.element.height = entry.contentRect.height
+								
+								const canvasContainer = this.element
+							
+								const canvasList =
+									canvasContainer.querySelectorAll('canvas')
+								
+								canvasList.forEach(function (canvas) {
+									canvas.width = entry.contentRect.width
+									canvas.height = entry.contentRect.height
+								})
 
-                            const canvasList =
-                                canvasContainer.querySelectorAll('canvas')
-                            canvasList.forEach(function (canvas) {
-                                canvas.width = entry.contentRect.width
-                                canvas.height = entry.contentRect.height
-                            })
+								let component = args.positional[0]
+								component.drawCanvas(canvasContainer)
 
-                            let component = args.positional[0]
-                            component.drawCanvas(canvasContainer)
-
-                            component.width = entry.contentRect.width
-                            component.height = entry.contentRect.height
+								component.width = entry.contentRect.width
+								component.height = entry.contentRect.height
+							}
                         }
                     }
                 }.bind(this)
             )
-            this.resizeObserver.observe(this.element.parentElement)
+            
+            this.resizeObserver.observe(this.element.parentElement);
 
             const canvas = this.element
             let component = args.positional[0]
-
 			
             component.drawCanvas(canvas)
         }

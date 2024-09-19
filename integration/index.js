@@ -1,22 +1,20 @@
-import {
-        DataService,
-        PushSummaryComponent,
-        embed,
-} from "http://localhost:8080/standalone.js"
- 
-let dataServiceTotal = new DataService(); 
-      
-dataServiceTotal.groupColumns = ["date"];
-dataServiceTotal.rollup = { value: "op.sum(d.value)" };
-          
+import { DataService, PushSummaryComponent, embed } from "http://localhost:8080/standalone.js"
+
 function render({ model, el }) {
-    dataServiceTotal.fromArrow(model.get("value").buffer);
+    let dataService = new DataService()
+
+    let value_serialized = model.get("value"); 
     
-    let totals = embed(PushSummaryComponent, dataServiceTotal, {
-          title: "Zusammenfassung",
-          benchmarkTitle: "Groups",
+    dataService.fromArrow(value_serialized)
+    dataService.groupColumns = model.get("groupColumns"); 
+    dataService.rollup = model.get("rollup"); 
+
+    let embedded = embed(PushSummaryComponent, dataService, {
+        title: model.get("title"),
+        benchmarkTitle: model.get("benchmarkTitle")
     });
-    el.appendChild(totals);
+    
+    el.appendChild(embedded);
 }
 
 export default { render };

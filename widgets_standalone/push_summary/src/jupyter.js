@@ -7,7 +7,8 @@ import PushSummaryComponent from './push_summary'
 
 import './style.css'
 
-export async function pushEmbed(component, element, dataService, args) {
+
+async function pushEmbed(component, element, dataService, args) {
     renderComponent(component, {
         element: document.getElementById(element),
         args: args,
@@ -31,19 +32,22 @@ function embed(component, dataService, args) {
     return element
 }
 
-let dataServiceTotal = new DataService(); 
-      
-dataServiceTotal.groupColumns = ["date"];
-dataServiceTotal.rollup = { value: "op.sum(d.value)" };
-          
+
 function render({ model, el }) {
-    dataServiceTotal.fromArrow(model.get("value").buffer);
+    let dataService = new DataService()
+alert("render");
+    let value_serialized = model.get("value"); 
     
-    let totals = embed(PushSummaryComponent, dataServiceTotal, {
-          title: "Zusammenfassung",
-          benchmarkTitle: "Groups",
+    dataService.fromArrow(value_serialized)
+    dataService.groupColumns = model.get("groupColumns"); 
+    dataService.rollup = model.get("rollup"); 
+    
+    let embedded = embed(PushSummaryComponent, dataService, {
+        title: model.get("title"),
+        benchmarkTitle: model.get("benchmarkTitle")
     });
-    el.appendChild(totals);
+    
+    el.appendChild(embedded);
 }
 
 export default { render };
