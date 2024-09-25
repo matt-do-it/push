@@ -1,0 +1,5 @@
+{
+  "app.js": "auto/app.js",
+  "vendor/nycflights13.arrow": "auto/vendor/nycflights13.arrow",
+  "index.html": "auto/index.html"
+}
