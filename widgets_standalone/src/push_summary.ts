@@ -486,7 +486,7 @@ setComponentTemplate(
                 trendColorHelper,
                 dateFormatHelper,
 
-                InputComponent
+                InputComponent,
             },
         }
     ),

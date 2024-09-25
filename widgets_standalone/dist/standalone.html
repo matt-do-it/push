@@ -8,6 +8,7 @@
             import {
                 DataService,
                 PushSummaryComponent,
+                PushTableComponent,
                 embed,
             } from './standalone.js'
 
@@ -83,6 +84,22 @@
                 document
                     .getElementById('withSelection')
                     .appendChild(withSelection)
+
+                let table = embed(
+                    PushTableComponent,
+                    dataServiceByGroup,
+                    {
+                        title: 'Zusammenfassung',
+                        benchmarkTitle: 'Groups',
+                        windowFilter: 'op.equal(d.group, $.group)',
+                        windowFilterParams: { group: 'Group A' },
+                    }
+                )
+
+                document
+                    .getElementById('table')
+                    .appendChild(table)
+
             })
         </script>
     </head>
@@ -90,25 +107,31 @@
         <div>Non styled</div>
         <div class="pusha">
             <div style="padding: 16px">
-                    <div class="prose pt-4 pb-2">
-                        <h1 class="">Totals</h1>
-                    </div>
-                    <div class="grid grid-cols-1">
-                        <div id="totals"></div>
-                    </div>
-                    <div class="prose pt-4 pb-2">
-                        <h1>Grouped</h1>
-                    </div>
-                    <div class="grid grid-cols-1">
-                        <div id="byGroup"></div>
-                    </div>
-                    <div class="prose pt-4 pb-2">
-                        <h1>Grouped with selection</h1>
-                    </div>
-                    <div class="grid grid-cols-1">
-                        <div id="withSelection"></div>
-                    </div>
+                <div class="prose pt-4 pb-2">
+                    <h1 class="">Totals</h1>
                 </div>
+                <div class="grid grid-cols-1">
+                    <div id="totals"></div>
+                </div>
+                <div class="prose pt-4 pb-2">
+                    <h1>Grouped</h1>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div id="byGroup"></div>
+                </div>
+                <div class="prose pt-4 pb-2">
+                    <h1>Grouped with selection</h1>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div id="withSelection"></div>
+                </div>
+                <div class="prose pt-4 pb-2">
+                    <h1>Table</h1>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div id="table"></div>
+                </div>
+            </div>
         </div>
     </body>
 </html>

@@ -159,54 +159,58 @@ class PushTableComponent extends Component {
 
 setComponentTemplate(
     precompileTemplate(
-        `<div class="push widget">
-    	<div class="widget-view">
-    		<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-    		<div class="font-bold">Details</div>
-	    	<div class="widget-table">
-        		<div class="overflow-x-auto">
-					<table class="table">
-						<!-- head -->
-						<thead>
-							<tr>
-								{{#each this.columns as |column|}}
-									<td>{{column.name}}</td>
-								{{/each}}
-							</tr>
-						</thead>
-					<tbody>
-						{{#each this.values as |row|}}
-							<tr>
-								{{#each this.columns as |column|}}
-									<td>{{tableValueHelper row column}}</td>
-								{{/each}}
-							</tr>
-						{{/each}}
-					</tbody>
-				</table>
-        	</div>
-			{{#if this.hasPages}}
-			<div class="pages mx-auto">
-				<div class="join">
-					{{#if this.hasPreviousPage}}
-						<button
-							class="join-item btn"
-							{{on "click" this.previousPage}}
-						>«</button>
-					{{/if}}
-					<button class="join-item btn">Page {{this.currentPage}}</button>
-					{{#if this.hasNextPage}}
-						<button
-							class="join-item btn"
-							{{on "click" this.nextPage}}
-						>»</button>
+        `<div class="push">
+        	<div class="widget">
+				<div class="widget-view">
+					<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
+					<div class="font-bold">Details</div>
+					<div class="widget-table">
+						<div class="overflow-x-auto">
+							<table class="table">
+								<!-- head -->
+								<thead>
+									<tr>
+										{{#each this.columns as |column|}}
+											<td>{{column.name}}</td>
+										{{/each}}
+									</tr>
+								</thead>
+								<tbody>
+									{{#each this.values as |row|}}
+										<tr>
+											{{#each this.columns as |column|}}
+												<td>{{tableValueHelper row column}}</td>
+											{{/each}}
+										</tr>
+									{{/each}}
+								</tbody>
+							</table>
+						</div>
+					</div>
+					{{#if this.hasPages}}
+						<div class="pt-8 flex flex-row">
+							<div class="mx-auto content-center">
+								<div class="join">
+									{{#if this.hasPreviousPage}}
+										<button
+											class="join-item btn"
+											{{on "click" this.previousPage}}
+										>«</button>
+									{{/if}}
+									<button class="join-item btn">Page {{this.currentPage}}</button>
+									{{#if this.hasNextPage}}
+										<button
+											class="join-item btn"
+											{{on "click" this.nextPage}}
+										>»</button>
+									{{/if}}
+								</div>
+							</div>
+						</div>
 					{{/if}}
 				</div>
 			</div>
-			{{/if}}
-	    </div>
-	</div>
-</div>
+		</div>
     `,
         {
             strictMode: true,

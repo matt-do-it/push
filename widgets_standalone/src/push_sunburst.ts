@@ -39,9 +39,9 @@ class PushSunburstComponent extends Component {
 
     @tracked selectedNode = null
 
-	@tracked timer = null
+    @tracked timer = null
     @tracked shouldAnimate = true
-		
+
     get title() {
         if (this.args.title) {
             return this.args.title
@@ -317,7 +317,7 @@ class PushSunburstComponent extends Component {
         // Specify layout
         const treemapLayout = d3
             .partition()
-            .size([2 * Math.PI, treemapData.height + 1]);
+            .size([2 * Math.PI, treemapData.height + 1])
 
         // Calculate layout for treemapData
         const root = treemapLayout(treemapData)
@@ -337,8 +337,8 @@ class PushSunburstComponent extends Component {
         return this.dataSelectedRoot.ancestors().reverse()
     }
 
-	@cached
-	get animatedNodes() {
+    @cached
+    get animatedNodes() {
         let displayIndices = this.displayColumns.map(
             function (e) {
                 return this.groupColumns.indexOf(e)
@@ -348,65 +348,61 @@ class PushSunburstComponent extends Component {
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
-		let relevantNodes = [];
-		let ancestors = this.dataSelectedRoot.ancestors(); 
-		
-		ancestors.forEach(function(e) {
-			let others = e.children.filter(function(d) {
-			return true; 
-				return !ancestors.includes(d);
-			});
-			relevantNodes = relevantNodes.concat(others);
-		});
-		
-		relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children);
-		
-		return relevantNodes.map(function(d) {
-			let animated = {
-				arcStart: d.x0, 
-				arcEnd: d.x1,
-				levelStart: d.y0, 
-				levelEnd: d.y1,
-				color: color(d.data.color),
-				formattedValue: valueFormatHelper([d.value, this.format]), 
-				node: d
-			};
+        let relevantNodes = []
+        let ancestors = this.dataSelectedRoot.ancestors()
 
-			let texts = []
+        ancestors.forEach(function (e) {
+            let others = e.children.filter(function (d) {
+                return true
+                return !ancestors.includes(d)
+            })
+            relevantNodes = relevantNodes.concat(others)
+        })
 
-			let p = d.ancestors().reverse()
+        relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
 
-			for (let i = 1; i < displayIndices.length; i++) {
-				if (displayIndices[i] + 1 < p.length) {
-					let t = p[displayIndices[i] + 1].data.name
-					if (t) {
-						texts.push(t)
-					}
-				}
-			}
+        return relevantNodes.map(
+            function (d) {
+                let animated = {
+                    arcStart: d.x0,
+                    arcEnd: d.x1,
+                    levelStart: d.y0,
+                    levelEnd: d.y1,
+                    color: color(d.data.color),
+                    formattedValue: valueFormatHelper([d.value, this.format]),
+                    node: d,
+                }
 
-			animated['texts'] = texts; 
-			
-			return animated; 
-		}.bind(this));
-	}
+                let texts = []
+
+                let p = d.ancestors().reverse()
+
+                for (let i = 1; i < displayIndices.length; i++) {
+                    if (displayIndices[i] + 1 < p.length) {
+                        let t = p[displayIndices[i] + 1].data.name
+                        if (t) {
+                            texts.push(t)
+                        }
+                    }
+                }
+
+                animated['texts'] = texts
+
+                return animated
+            }.bind(this)
+        )
+    }
 
     @cached
     get xMap() {
-        return d3.scaleLinear(
-            [0, this.width],
-            [0, this.width]
-        )
+        return d3.scaleLinear([0, this.width], [0, this.width])
     }
 
     @cached
     get yMap() {
-        return d3.scaleLinear(
-            [0, this.height],
-            [0, this.height]
-        )
+        return d3.scaleLinear([0, this.height], [0, this.height])
     }
-	
+
     @action
     drawNodes(ctx, scaledElapsed) {
         let displayIndices = this.displayColumns.map(
@@ -414,47 +410,73 @@ class PushSunburstComponent extends Component {
                 return this.groupColumns.indexOf(e)
             }.bind(this)
         )
-        
+
         this.animatedNodes.forEach(
             function (d, i) {
                 ctx.fillStyle = d.color
-				ctx.strokeStyle = "white"
-				ctx.strokeWidth = 2
-            	
-            	let baseRadius = this.width / 6; 
-            	let baseOffset = this.width / 20; 
-            	
-            	let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius; 
-            	let outerRadius = baseOffset + (d.levelStart) * baseRadius; 
-            	
-				ctx.lineWidth = 3
+                ctx.strokeStyle = 'white'
+                ctx.strokeWidth = 2
 
-				var innerStartX = this.width / 2 + Math.cos(d.arcStart) * (innerRadius );
-				var innerStartY = this.height / 2 + Math.sin(d.arcStart) * (innerRadius ); 
+                let baseRadius = this.width / 6
+                let baseOffset = this.width / 20
 
-				var innerEndX = this.width / 2 + Math.cos(d.arcEnd) * (innerRadius );
-				var innerEndY = this.height / 2 + Math.sin(d.arcEnd) * (innerRadius ); 
-				
-				var outerEndX = this.width / 2 + Math.cos(d.arcEnd) * (outerRadius);
-				var outerEndY = this.height / 2 + Math.sin(d.arcEnd) * (outerRadius); 
-				
-				var outerStartX = this.width / 2 + Math.cos(d.arcStart) * (outerRadius);
-				var outerStartY = this.height / 2 + Math.sin(d.arcStart) * (outerRadius); 
+                let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius
+                let outerRadius = baseOffset + d.levelStart * baseRadius
 
-				var outerTextX = this.width / 2 + Math.cos((d.arcStart + d.arcEnd) / 2) * outerRadius + 5;
-				var outerTextY = this.height / 2 + Math.sin((d.arcStart + d.arcEnd) / 2) * outerRadius + 5;
-			
-            	ctx.beginPath();
+                ctx.lineWidth = 3
 
-				ctx.moveTo(innerStartX, innerStartY);
-				ctx.arc(this.width / 2, this.height / 2, innerRadius, d.arcStart, d.arcEnd);
-				ctx.lineTo(outerEndX, outerEndY);
-				ctx.arc(this.width / 2, this.height / 2, outerRadius, d.arcEnd, d.arcStart, true);
-				ctx.lineTo(innerStartX, innerStartY);
+                var innerStartX =
+                    this.width / 2 + Math.cos(d.arcStart) * innerRadius
+                var innerStartY =
+                    this.height / 2 + Math.sin(d.arcStart) * innerRadius
 
-				ctx.fill();
-				ctx.stroke();
-		
+                var innerEndX =
+                    this.width / 2 + Math.cos(d.arcEnd) * innerRadius
+                var innerEndY =
+                    this.height / 2 + Math.sin(d.arcEnd) * innerRadius
+
+                var outerEndX =
+                    this.width / 2 + Math.cos(d.arcEnd) * outerRadius
+                var outerEndY =
+                    this.height / 2 + Math.sin(d.arcEnd) * outerRadius
+
+                var outerStartX =
+                    this.width / 2 + Math.cos(d.arcStart) * outerRadius
+                var outerStartY =
+                    this.height / 2 + Math.sin(d.arcStart) * outerRadius
+
+                var outerTextX =
+                    this.width / 2 +
+                    Math.cos((d.arcStart + d.arcEnd) / 2) * outerRadius +
+                    5
+                var outerTextY =
+                    this.height / 2 +
+                    Math.sin((d.arcStart + d.arcEnd) / 2) * outerRadius +
+                    5
+
+                ctx.beginPath()
+
+                ctx.moveTo(innerStartX, innerStartY)
+                ctx.arc(
+                    this.width / 2,
+                    this.height / 2,
+                    innerRadius,
+                    d.arcStart,
+                    d.arcEnd
+                )
+                ctx.lineTo(outerEndX, outerEndY)
+                ctx.arc(
+                    this.width / 2,
+                    this.height / 2,
+                    outerRadius,
+                    d.arcEnd,
+                    d.arcStart,
+                    true
+                )
+                ctx.lineTo(innerStartX, innerStartY)
+
+                ctx.fill()
+                ctx.stroke()
 
                 let levels = 0
                 let texts = []
@@ -462,76 +484,68 @@ class PushSunburstComponent extends Component {
                 ctx.fillStyle = 'black'
                 ctx.textBaseline = 'top'
                 ctx.font = 'bold 12px sans-serif'
-				ctx.textAlign = 'left';
+                ctx.textAlign = 'left'
 
                 let textOffset = 2
 
- 
                 for (let i = 0; i < d.texts.length; i++) {
+                    ctx.save()
+                    ctx.translate(outerTextX, outerTextY)
+                    ctx.rotate((d.arcStart + d.arcEnd) / 2)
 
-				ctx.save();
- 				ctx.translate(outerTextX, outerTextY);
- 				ctx.rotate((d.arcStart + d.arcEnd) / 2);
-
-                    ctx.fillText(
-                        d.texts[i],
-                        0,
-                        textOffset
-                    )
-                    textOffset = textOffset + 14;
-                    ctx.restore();
+                    ctx.fillText(d.texts[i], 0, textOffset)
+                    textOffset = textOffset + 14
+                    ctx.restore()
                 }
 
                 ctx.fillStyle = 'black'
                 ctx.textBaseline = 'top'
                 ctx.font = '12px sans-serif'
-				ctx.textAlign = 'left';
+                ctx.textAlign = 'left'
 
-				ctx.save();
- 				ctx.translate(outerTextX, outerTextY);
- 				ctx.rotate((d.arcStart + d.arcEnd) / 2);
+                ctx.save()
+                ctx.translate(outerTextX, outerTextY)
+                ctx.rotate((d.arcStart + d.arcEnd) / 2)
 
-                ctx.fillText(
-                    d.formattedValue,
-                    0,
-                    textOffset
-                )
-                    ctx.restore();
+                ctx.fillText(d.formattedValue, 0, textOffset)
+                ctx.restore()
             }.bind(this)
         )
     }
 
-	@action 
-	drawAll(ctx, scaledElapsed) {
+    @action
+    drawAll(ctx, scaledElapsed) {
         ctx.rect(0, 0, this.width, this.height)
         ctx.fillStyle = 'white'
         ctx.fill()
 
-		this.drawNodes(ctx, scaledElapsed);	
-	}
+        this.drawNodes(ctx, scaledElapsed)
+    }
 
-	
     @action
     drawCanvas(canvasContainer) {
         const canvas = canvasContainer.querySelector('canvas')
         const ctx = canvas.getContext('2d')
 
-        const t = this.dataSelectedRoot;
-        
-        const timeScale = d3.scaleLinear([0, 500], [0.0, 1.0]).clamp(true); 
-        
+        const t = this.dataSelectedRoot
+
+        const timeScale = d3.scaleLinear([0, 500], [0.0, 1.0]).clamp(true)
+
         if (this.timer) {
-        	this.timer.stop();
+            this.timer.stop()
         }
-        this.drawAll(ctx, 0);
-        this.timer = d3.timer(function(elapsed) {
-        	var scaledElapsed = timeScale(elapsed); 
-			this.drawAll(ctx, scaledElapsed);
-			if (scaledElapsed == 1) {
-				this.timer.stop();
-				this.shouldAnimate = false; 
-			}
-		}.bind(this), 150);
+        this.drawAll(ctx, 0)
+        this.timer = d3.timer(
+            function (elapsed) {
+                var scaledElapsed = timeScale(elapsed)
+                this.drawAll(ctx, scaledElapsed)
+                if (scaledElapsed == 1) {
+                    this.timer.stop()
+                    this.shouldAnimate = false
+                }
+            }.bind(this),
+            150
+        )
     }
 
     @action
@@ -556,8 +570,6 @@ class PushSunburstComponent extends Component {
     toggleEditMode() {
         this.editMode = !this.editMode
     }
-    
-    
 
     @action
     mouseClick(event) {
@@ -565,52 +577,55 @@ class PushSunburstComponent extends Component {
         var x = event.clientX - rect.left
         var y = event.clientY - rect.top
 
-		var deltaX = this.width / 2 - x;
-		var deltaY = this.height /2 - y;
-		var rad = Math.atan2(deltaY, deltaX) + Math.PI; // In radians
-		var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        var deltaX = this.width / 2 - x
+        var deltaY = this.height / 2 - y
+        var rad = Math.atan2(deltaY, deltaX) + Math.PI // In radians
+        var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
 
-            let baseRadius = this.width / 6; 
-            let baseOffset = this.width / 20; 
-            	
-		if (!this.dataSelectedRoot.children) {
-			return false; 
+        let baseRadius = this.width / 6
+        let baseOffset = this.width / 20
 
-		}
-        let selectedElement = this.animatedNodes.find(function (d) {
-            let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius; 
-            let outerRadius = baseOffset + (d.levelStart) * baseRadius; 
-			
-			let startAngle = d.arcStart; 
-			let endAngle = d.arcEnd; 
-			console.log(innerRadius);
-        	if (rad >= startAngle && rad <= endAngle && 
-        		distance >= innerRadius && distance <= outerRadius) {
-	
-				return true;         		
-        	} else {
-        		return false; 
-        	}
-        }.bind(this))
+        if (!this.dataSelectedRoot.children) {
+            return false
+        }
+        let selectedElement = this.animatedNodes.find(
+            function (d) {
+                let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius
+                let outerRadius = baseOffset + d.levelStart * baseRadius
 
-        if (
-            selectedElement
-        ) {
-            this.selectedNode = selectedElement.node;
-            this.shouldAnimate = true; 
+                let startAngle = d.arcStart
+                let endAngle = d.arcEnd
+                console.log(innerRadius)
+                if (
+                    rad >= startAngle &&
+                    rad <= endAngle &&
+                    distance >= innerRadius &&
+                    distance <= outerRadius
+                ) {
+                    return true
+                } else {
+                    return false
+                }
+            }.bind(this)
+        )
+
+        if (selectedElement) {
+            this.selectedNode = selectedElement.node
+            this.shouldAnimate = true
         }
     }
 
     @action
     back(node, event) {
         event.preventDefault()
-        this.selectedNode = node; 
-        this.shouldAnimate = false; 
+        this.selectedNode = node
+        this.shouldAnimate = false
     }
 }
 
 setComponentTemplate(
-    precompileTemplate(`
+    precompileTemplate(
+        `
       <div class="push widget">
         {{#unless this.editMode}}
       	<div class="widget-view">

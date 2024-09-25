@@ -25,7 +25,7 @@ import {
 
 import * as d3 from 'd3'
 
-class PushPartitionComponent extends Component {
+class PushHierarchyComponent extends Component {
     @service data
     @service dateCalc
 
@@ -39,9 +39,9 @@ class PushPartitionComponent extends Component {
 
     @tracked selectedNode = null
 
-	@tracked timer = null
+    @tracked timer = null
     @tracked shouldAnimate = true
-	
+
     get title() {
         if (this.args.title) {
             return this.args.title
@@ -318,17 +318,19 @@ class PushPartitionComponent extends Component {
             .sort((a, b) => b.value - a.value)
 
         // Specify layout
-        const partitionLayout = d3
-            .partition()
+        const treemapLayout = d3
+            .treemap()
+            .tile(d3.treemapSlice)
             .size([this.width, this.height])
             .round(true)
 
         // Calculate layout for treemapData
-        const root = partitionLayout(treemapData)
+        const root = treemapLayout(treemapData)
         return root
     }
 
     get dataSelectedRoot() {
+        let nodes
         if (this.selectedNode) {
             return this.selectedNode
         } else {
@@ -340,8 +342,8 @@ class PushPartitionComponent extends Component {
         return this.dataSelectedRoot.ancestors().reverse()
     }
 
-	@cached
-	get animatedNodes() {
+    @cached
+    get animatedNodes() {
         let displayIndices = this.displayColumns.map(
             function (e) {
                 return this.groupColumns.indexOf(e)
@@ -351,100 +353,92 @@ class PushPartitionComponent extends Component {
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
+        let relevantNodes = []
 
-		return this.dataRoot.descendants().map(function(d) {
-			let animated = {
-				x: this.xMap(d.x0), 
-				y: this.yMap(d.y0),
-				width: this.xMap(d.x1) - this.xMap(d.x0) - 2, 
-				height: this.yMap(d.y1) - this.yMap(d.y0) - 2,
-				color: color(d.data.color),
-				formattedValue: valueFormatHelper([d.value, this.format]), 
-			};
+        relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
 
-			let texts = []
+        let ancestors = this.dataSelectedRoot.ancestors()
 
-			let p = d.ancestors().reverse()
+        ancestors.forEach(function (e) {
+            let others = e.children.filter(function (d) {
+                return !ancestors.includes(d)
+            })
+            relevantNodes = relevantNodes.concat(others)
+        })
 
-			for (let i = 1; i < displayIndices.length; i++) {
-				if (displayIndices[i] + 1 < p.length) {
-					let t = p[displayIndices[i] + 1].data.name
-					if (t) {
-						texts.push(t)
-					}
-				}
-			}
+        return relevantNodes.map(
+            function (d) {
+                let animated = {
+                    x: this.xMap(d.x0),
+                    y: this.yMap(d.y0),
+                    width: this.xMap(d.x1) - this.xMap(d.x0) - 2,
+                    height: this.yMap(d.y1) - this.yMap(d.y0) - 2,
+                    color: color(d.data.color),
+                    formattedValue: valueFormatHelper([d.value, this.format]),
+                    node: d,
+                }
 
-			animated['texts'] = texts; 
-			
-			return animated; 
-		}.bind(this));
-	}
+                let texts = []
+
+                let p = d.ancestors().reverse()
+
+                for (let i = 1; i < displayIndices.length; i++) {
+                    if (displayIndices[i] + 1 < p.length) {
+                        let t = p[displayIndices[i] + 1].data.name
+                        if (t) {
+                            texts.push(t)
+                        }
+                    }
+                }
+
+                animated['texts'] = texts
+
+                return animated
+            }.bind(this)
+        )
+    }
 
     @cached
     get xMap() {
-    	let xMin = 99999;
-        let xMax = 0; 
-        
-        this.dataSelectedRoot.descendants().forEach(
-        	function (d, i) {
-        		let x = d.x1; 
-        		
-        		if (d.x1 > xMax) {
-        			xMax = d.x1; 
-        		}
-        		if (d.x0 < xMin) {
-        			xMin = d.x0;
-        		}
-        	}
+        return d3.scaleLinear(
+            [this.dataSelectedRoot.x0, this.dataSelectedRoot.x1],
+            [0, this.width]
         )
-        
-        return d3.scaleLinear([xMin, xMax], [0, this.width]);
     }
 
     @cached
     get yMap() {
-    	let yMin = 99999;
-        let yMax = 0; 
-        
-        this.dataSelectedRoot.descendants().forEach(
-        	function (d, i) {
-        		if (d.y1 > yMax) {
-        			yMax = d.y1; 
-        		}
-        		if (d.y0 < yMin) {
-        			yMin = d.y0;
-        		}
-        	}
+        return d3.scaleLinear(
+            [this.dataSelectedRoot.y0, this.dataSelectedRoot.y1],
+            [0, this.height]
         )
-        
-        return d3.scaleLinear([yMin, yMax], [0, this.height]);
     }
 
-	
     @action
     drawNodes(ctx, scaledElapsed) {
+        let displayIndices = this.displayColumns.map(
+            function (e) {
+                return this.groupColumns.indexOf(e)
+            }.bind(this)
+        )
+
         this.animatedNodes.forEach(
             function (d, i) {
                 ctx.fillStyle = d.color
-                  ctx.fillRect(
-                    d.x,
-                    d.y,
-                    d.width,
-                    d.height
-                )
+
+                ctx.fillRect(d.x, d.y, d.width, d.height)
+
+                let levels = 0
+                let texts = []
 
                 ctx.fillStyle = 'white'
                 ctx.textBaseline = 'top'
                 ctx.font = 'bold 12px sans-serif'
 
                 let textOffset = 2
+
                 for (let i = 0; i < d.texts.length; i++) {
-                    ctx.fillText(
-                        d.texts[i],
-                        d.x + 2,
-                        d.y + textOffset
-                    )
+                    ctx.fillText(d.texts[i], d.x + 2, d.y + textOffset)
                     textOffset = textOffset + 14
                 }
 
@@ -452,36 +446,44 @@ class PushPartitionComponent extends Component {
                 ctx.textBaseline = 'top'
                 ctx.font = '12px sans-serif'
 
-                ctx.fillText(
-                    d.formattedValue,
-                    d.x + 2,
-                    d.y + textOffset
-                )
+                ctx.fillText(d.formattedValue, d.x + 2, d.y + textOffset)
             }.bind(this)
         )
-        
-
     }
 
-	@action 
-	drawAll(ctx, scaledElapsed) {
+    @action
+    drawAll(ctx, scaledElapsed) {
         ctx.rect(0, 0, this.width, this.height)
         ctx.fillStyle = 'white'
         ctx.fill()
 
-		this.drawNodes(ctx, scaledElapsed);	
-	}
+        this.drawNodes(ctx, scaledElapsed)
+    }
 
     @action
     drawCanvas(canvasContainer) {
         const canvas = canvasContainer.querySelector('canvas')
         const ctx = canvas.getContext('2d')
-        
-        const t = this.dataSelectedRoot;
-        
-        const timeScale = d3.scaleLinear([0, 500], [0.0, 1.0]).clamp(true); 
 
-        this.drawAll(ctx, 0);
+        const t = this.dataSelectedRoot
+
+        const timeScale = d3.scaleLinear([0, 500], [0.0, 1.0]).clamp(true)
+
+        if (this.timer) {
+            this.timer.stop()
+        }
+        this.drawAll(ctx, 0)
+        this.timer = d3.timer(
+            function (elapsed) {
+                var scaledElapsed = timeScale(elapsed)
+                this.drawAll(ctx, scaledElapsed)
+                if (scaledElapsed == 1) {
+                    this.timer.stop()
+                    this.shouldAnimate = false
+                }
+            }.bind(this),
+            150
+        )
     }
 
     @action
@@ -513,9 +515,16 @@ class PushPartitionComponent extends Component {
         var x = event.clientX - rect.left
         var y = event.clientY - rect.top
 
-        let selectedElement = this.dataSelectedRoot.children.find(function (d) {
-            return x >= this.xMap(d.x0) && y >= this.yMap(d.y0) && x <= this.xMap(d.x1) && y <= this.yMap(d.y1)
-        }.bind(this))
+        let selectedElement = this.dataSelectedRoot.children.find(
+            function (d) {
+                return (
+                    x >= this.xMap(d.x0) &&
+                    y >= this.yMap(d.y0) &&
+                    x <= this.xMap(d.x1) &&
+                    y <= this.yMap(d.y1)
+                )
+            }.bind(this)
+        )
 
         if (
             selectedElement &&
@@ -523,20 +532,21 @@ class PushPartitionComponent extends Component {
             selectedElement.children.length > 1
         ) {
             this.selectedNode = selectedElement
-            this.shouldAnimate = true; 
+            this.shouldAnimate = true
         }
     }
 
     @action
     back(node, event) {
         event.preventDefault()
-        this.selectedNode = node; 
-        this.shouldAnimate = false; 
+        this.selectedNode = node
+        this.shouldAnimate = false
     }
 }
 
 setComponentTemplate(
-    precompileTemplate(`
+    precompileTemplate(
+        `
       <div class="push widget">
         {{#unless this.editMode}}
       	<div class="widget-view">
@@ -594,7 +604,7 @@ setComponentTemplate(
             },
         }
     ),
-    PushPartitionComponent
+    PushHierarchyComponent
 )
 
-export default PushPartitionComponent
+export default PushHierarchyComponent

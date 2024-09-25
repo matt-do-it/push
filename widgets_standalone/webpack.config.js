@@ -75,12 +75,14 @@ module.exports = [
             outputModule: true,
         },
         devServer: {
-  			headers: {
-    			"Access-Control-Allow-Origin": "*",
-    			"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-    			"Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
-  			}
-		},
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods':
+                    'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+                'Access-Control-Allow-Headers':
+                    'X-Requested-With, content-type, Authorization',
+            },
+        },
         mode:
             process.env.NODE_ENV === 'production'
                 ? 'production'
@@ -112,13 +114,15 @@ module.exports = [
                 type: 'module',
             },
         },
-   		devServer: {
-  			headers: {
-    			"Access-Control-Allow-Origin": "*",
-    			"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-    			"Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
-  			} 
-  		},
+        devServer: {
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods':
+                    'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+                'Access-Control-Allow-Headers':
+                    'X-Requested-With, content-type, Authorization',
+            },
+        },
         module: {
             rules: [
                 {
@@ -152,20 +156,17 @@ module.exports = [
     },
     {
         entry: {
-            jupyter: './src/jupyter.js',
-        },
-        experiments: {
-            outputModule: true,
+            standalone: './src/standalone.js',
         },
         mode:
             process.env.NODE_ENV === 'production'
                 ? 'production'
                 : 'development',
-		performance: {
-			hints: false,
-			maxEntrypointSize: 5120000,
-			maxAssetSize: 5120000
-		},
+        performance: {
+            hints: false,
+            maxEntrypointSize: 5120000,
+            maxAssetSize: 5120000,
+        },
         plugins: [
             new CopyPlugin({
                 patterns: [{ from: 'vendor', to: 'vendor' }],
@@ -180,11 +181,10 @@ module.exports = [
             extensions: ['.ts', '.js', '.json', '.gts', '.gjs'],
         },
         output: {
-            filename: '[name].js',
+            filename: '[name]-bundled.js',
             path: path.resolve(__dirname, 'dist'),
-            library: {
-                type: 'module',
-            },
+            library: 'push',
+            libraryTarget: 'umd',
         },
 
         module: {
@@ -217,5 +217,5 @@ module.exports = [
                 },
             ],
         },
-    }
+    },
 ]

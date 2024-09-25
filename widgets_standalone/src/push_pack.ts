@@ -39,9 +39,9 @@ class PushPackComponent extends Component {
 
     @tracked selectedNode = null
 
-	@tracked timer = null
+    @tracked timer = null
     @tracked shouldAnimate = true
-	
+
     get title() {
         if (this.args.title) {
             return this.args.title
@@ -318,9 +318,7 @@ class PushPackComponent extends Component {
             .sort((a, b) => b.value - a.value)
 
         // Specify layout
-        const partitionLayout = d3
-            .pack()
-            .size([1, 1]);
+        const partitionLayout = d3.pack().size([1, 1])
 
         // Calculate layout for treemapData
         const root = partitionLayout(treemapData)
@@ -339,8 +337,8 @@ class PushPackComponent extends Component {
         return this.dataSelectedRoot.ancestors().reverse()
     }
 
-	@cached
-	get animatedNodes() {
+    @cached
+    get animatedNodes() {
         let displayIndices = this.displayColumns.map(
             function (e) {
                 return this.groupColumns.indexOf(e)
@@ -350,137 +348,133 @@ class PushPackComponent extends Component {
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
+        return this.dataRoot.descendants().map(
+            function (d) {
+                let animated = {
+                    x: this.xMap(d.x),
+                    y: this.yMap(d.y),
+                    r: this.rMap(d.r),
+                    fillColor: color(d.data.color),
+                    strokeColor: 'white',
+                }
 
-		return this.dataRoot.descendants().map(function(d) {
-			let animated = {
-				x: this.xMap(d.x), 
-				y: this.yMap(d.y),
-				r: this.rMap(d.r), 
-				fillColor: color(d.data.color),
-				strokeColor: "white"
-			};
+                let texts = []
 
-			let texts = []
+                let p = d.ancestors().reverse()
 
-			let p = d.ancestors().reverse()
+                for (let i = 1; i < displayIndices.length; i++) {
+                    if (displayIndices[i] + 1 < p.length) {
+                        let t = p[displayIndices[i] + 1].data.name
+                        if (t) {
+                            texts.push(t)
+                        }
+                    }
+                }
 
-			for (let i = 1; i < displayIndices.length; i++) {
-				if (displayIndices[i] + 1 < p.length) {
-					let t = p[displayIndices[i] + 1].data.name
-					if (t) {
-						texts.push(t)
-					}
-				}
-			}
+                if (!d.children || d.children.length == 0) {
+                    animated['texts'] = texts
+                    animated['fillColor'] = 'white'
+                    animated['formattedValue'] = valueFormatHelper([
+                        d.value,
+                        this.format,
+                    ])
+                }
 
-			if (!d.children || d.children.length == 0) {
-				animated['texts'] = texts; 
-				animated['fillColor'] = "white";
-				animated['formattedValue'] = valueFormatHelper([d.value, this.format]); 
-			}
-			
-			return animated; 
-		}.bind(this));
-	}
+                return animated
+            }.bind(this)
+        )
+    }
 
     @cached
     get xMap() {
-    	let xMin = this.dataSelectedRoot.x - this.dataSelectedRoot.r ;
-    	let xMax = this.dataSelectedRoot.x + this.dataSelectedRoot.r ;
-    	
-		return d3.scaleLinear([xMin, xMax], [this.width / 2 - this.height / 2, this.width / 2 + this.height / 2]);
+        let xMin = this.dataSelectedRoot.x - this.dataSelectedRoot.r
+        let xMax = this.dataSelectedRoot.x + this.dataSelectedRoot.r
+
+        return d3.scaleLinear(
+            [xMin, xMax],
+            [this.width / 2 - this.height / 2, this.width / 2 + this.height / 2]
+        )
     }
 
     @cached
     get yMap() {
-    	let yMin = this.dataSelectedRoot.y - this.dataSelectedRoot.r ;
-    	let yMax = this.dataSelectedRoot.y + this.dataSelectedRoot.r ;
+        let yMin = this.dataSelectedRoot.y - this.dataSelectedRoot.r
+        let yMax = this.dataSelectedRoot.y + this.dataSelectedRoot.r
 
-        return d3.scaleLinear([yMin, yMax], [0, this.height]);
+        return d3.scaleLinear([yMin, yMax], [0, this.height])
     }
 
     @cached
     get rMap() {
-    	let yMin = this.dataSelectedRoot.y - this.dataSelectedRoot.r ;
-    	let yMax = this.dataSelectedRoot.y + this.dataSelectedRoot.r ;
+        let yMin = this.dataSelectedRoot.y - this.dataSelectedRoot.r
+        let yMax = this.dataSelectedRoot.y + this.dataSelectedRoot.r
 
-        return d3.scaleLinear([0, this.dataSelectedRoot.r], [0, this.height / 2]);
+        return d3.scaleLinear(
+            [0, this.dataSelectedRoot.r],
+            [0, this.height / 2]
+        )
     }
 
-	
     @action
     drawNodes(ctx, scaledElapsed) {
         this.animatedNodes.forEach(
             function (d, i) {
-            	if (d.strokeColor) {
-					ctx.strokeStyle = d.strokeColor
-				
-					ctx.beginPath();
-					ctx.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
-					ctx.stroke();
-            	}
-            	if (d.fillColor) {
-            		ctx.fillStyle = d.fillColor; 
-					ctx.beginPath();
-					ctx.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
-					ctx.fill();
-            	}
-            	
-				
+                if (d.strokeColor) {
+                    ctx.strokeStyle = d.strokeColor
 
-				
-				if (d.texts && d.formattedValue) {
-					let textOffset = 2 - (d.texts.length + 1) * 14 / 2; 
+                    ctx.beginPath()
+                    ctx.arc(d.x, d.y, d.r, 0, 2 * Math.PI)
+                    ctx.stroke()
+                }
+                if (d.fillColor) {
+                    ctx.fillStyle = d.fillColor
+                    ctx.beginPath()
+                    ctx.arc(d.x, d.y, d.r, 0, 2 * Math.PI)
+                    ctx.fill()
+                }
 
-					ctx.fillStyle = 'black'
-					ctx.textBaseline = 'top'
-					ctx.textAlign = "center"
-					ctx.font = 'bold 12px sans-serif'
+                if (d.texts && d.formattedValue) {
+                    let textOffset = 2 - ((d.texts.length + 1) * 14) / 2
 
-					for (let i = 0; i < d.texts.length; i++) {
-						ctx.fillText(
-							d.texts[i],
-							d.x + 2,
-							d.y + textOffset
-						)
-						textOffset = textOffset + 14
-					}
+                    ctx.fillStyle = 'black'
+                    ctx.textBaseline = 'top'
+                    ctx.textAlign = 'center'
+                    ctx.font = 'bold 12px sans-serif'
 
-					ctx.fillStyle = 'black'
-					ctx.textBaseline = 'top'
-					ctx.font = '12px sans-serif'
+                    for (let i = 0; i < d.texts.length; i++) {
+                        ctx.fillText(d.texts[i], d.x + 2, d.y + textOffset)
+                        textOffset = textOffset + 14
+                    }
 
-					ctx.fillText(
-						d.formattedValue,
-						d.x + 2,
-						d.y + textOffset
-					)
-				}
+                    ctx.fillStyle = 'black'
+                    ctx.textBaseline = 'top'
+                    ctx.font = '12px sans-serif'
+
+                    ctx.fillText(d.formattedValue, d.x + 2, d.y + textOffset)
+                }
             }.bind(this)
         )
-        
-
     }
 
-	@action 
-	drawAll(ctx, scaledElapsed) {
+    @action
+    drawAll(ctx, scaledElapsed) {
         ctx.rect(0, 0, this.width, this.height)
         ctx.fillStyle = '#eeeeee'
         ctx.fill()
 
-		this.drawNodes(ctx, scaledElapsed);	
-	}
+        this.drawNodes(ctx, scaledElapsed)
+    }
 
     @action
     drawCanvas(canvasContainer) {
         const canvas = canvasContainer.querySelector('canvas')
         const ctx = canvas.getContext('2d')
-        
-        const t = this.dataSelectedRoot;
-        
-        const timeScale = d3.scaleLinear([0, 500], [0.0, 1.0]).clamp(true); 
 
-        this.drawAll(ctx, 0);
+        const t = this.dataSelectedRoot
+
+        const timeScale = d3.scaleLinear([0, 500], [0.0, 1.0]).clamp(true)
+
+        this.drawAll(ctx, 0)
     }
 
     @action
@@ -512,10 +506,16 @@ class PushPackComponent extends Component {
         var x = event.clientX - rect.left
         var y = event.clientY - rect.top
 
-        let selectedElement = this.dataSelectedRoot.children.find(function (d) {
-            return x >= this.xMap(d.x) - this.rMap(d.r) && y >= this.yMap(d.y) - this.rMap(d.r)  && 
-            	x <= this.xMap(d.x) + this.rMap(d.r) && y <= this.yMap(d.y) + this.rMap(d.r)
-        }.bind(this))
+        let selectedElement = this.dataSelectedRoot.children.find(
+            function (d) {
+                return (
+                    x >= this.xMap(d.x) - this.rMap(d.r) &&
+                    y >= this.yMap(d.y) - this.rMap(d.r) &&
+                    x <= this.xMap(d.x) + this.rMap(d.r) &&
+                    y <= this.yMap(d.y) + this.rMap(d.r)
+                )
+            }.bind(this)
+        )
 
         if (
             selectedElement &&
@@ -523,20 +523,21 @@ class PushPackComponent extends Component {
             selectedElement.children.length > 1
         ) {
             this.selectedNode = selectedElement
-            this.shouldAnimate = true; 
+            this.shouldAnimate = true
         }
     }
 
     @action
     back(node, event) {
         event.preventDefault()
-        this.selectedNode = node; 
-        this.shouldAnimate = false; 
+        this.selectedNode = node
+        this.shouldAnimate = false
     }
 }
 
 setComponentTemplate(
-    precompileTemplate(`
+    precompileTemplate(
+        `
       <div class="push widget">
         {{#unless this.editMode}}
       	<div class="widget-view">
