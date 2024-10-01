@@ -2,16 +2,11 @@
 
 <html>
     <head>
-        <title>Standalone</title>
+        <title><%= htmlWebpackPlugin.options.title %></title>
+		<meta charset="utf-8">
+        <script src="standalone-bundled.js"></script>
         <script type="module">
             //	import { DataService, PushSummaryComponent, pushEmbed, embedSummary } from 'https://cdn.jsdelivr.net/gh/alldaysunshine/ml-push/widgets_standalone/push_summary/dist/standalone.js';
-            import {
-                DataService,
-                PushSummaryComponent,
-                PushTableComponent,
-                embed,
-            } from './standalone.js'
-
             document.addEventListener('DOMContentLoaded', (event) => {
                 var values = [
                     {
@@ -46,33 +41,32 @@
                     },
                 ]
 
-                let dataServiceTotal = new DataService()
+                let dataServiceTotal = new push.DataService()
                 dataServiceTotal.loadFrom(values)
                 dataServiceTotal.groupColumns = ['date']
                 dataServiceTotal.rollup = { value: 'op.sum(d.value)' }
 
-                let totals = embed(PushSummaryComponent, dataServiceTotal, {
+                let totals = push.embed(push.PushSummaryComponent, dataServiceTotal, {
                     title: 'Zusammenfassung',
-                    display: 'isoquarter',
                     benchmarkTitle: 'Groups',
                 })
 
                 document.getElementById('totals').appendChild(totals)
 
-                let dataServiceByGroup = new DataService()
+                let dataServiceByGroup = new push.DataService()
                 dataServiceByGroup.loadFrom(values)
                 dataServiceByGroup.groupColumns = ['group', 'date']
                 dataServiceByGroup.rollup = { value: 'op.sum(d.value)' }
 
-                let byGroup = embed(PushSummaryComponent, dataServiceByGroup, {
+                let byGroup = push.embed(push.PushSummaryComponent, dataServiceByGroup, {
                     title: 'Zusammenfassung',
                     benchmarkTitle: 'Groups',
                 })
 
                 document.getElementById('byGroup').appendChild(byGroup)
 
-                let withSelection = embed(
-                    PushSummaryComponent,
+                let withSelection = push.embed(
+                    push.PushSummaryComponent,
                     dataServiceByGroup,
                     {
                         title: 'Zusammenfassung',
@@ -86,20 +80,6 @@
                     .getElementById('withSelection')
                     .appendChild(withSelection)
 
-                let table = embed(
-                    PushTableComponent,
-                    dataServiceByGroup,
-                    {
-                        title: 'Zusammenfassung',
-                        benchmarkTitle: 'Groups',
-                        windowFilter: 'op.equal(d.group, $.group)',
-                        windowFilterParams: { group: 'Group A' },
-                    }
-                )
-
-                document
-                    .getElementById('table')
-                    .appendChild(table)
 
             })
         </script>

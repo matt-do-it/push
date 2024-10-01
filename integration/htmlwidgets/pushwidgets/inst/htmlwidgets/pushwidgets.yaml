@@ -1,0 +1,6 @@
+dependencies:
+  - name: pushwidgets
+    version: 1.0.3
+    src: htmlwidgets/lib/
+    script: 
+      - standalone-bundled.js

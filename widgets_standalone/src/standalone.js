@@ -34,6 +34,8 @@ function embed(component, dataService, args) {
 
 
 export { PushSummaryComponent, PushTableComponent }
-export { DataService } 
+export { DataService, DateCalcService } 
 
 export { pushEmbed, embed  }
+
+export { renderComponent  }

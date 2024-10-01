@@ -158,16 +158,21 @@ module.exports = [
         entry: {
             standalone: './src/standalone.js',
         },
-        mode:
-            process.env.NODE_ENV === 'production'
-                ? 'production'
-                : 'development',
+        mode: 'development',
+        devtool: false, 
         performance: {
             hints: false,
             maxEntrypointSize: 5120000,
             maxAssetSize: 5120000,
         },
         plugins: [
+            new HtmlWebpackPlugin({
+                title: 'Standalone',
+                filename: 'standalone-bundled.html',
+                template: 'standalone-bundled.html',
+                inject: false,
+                scriptLoading: 'module',
+            }),
             new CopyPlugin({
                 patterns: [{ from: 'vendor', to: 'vendor' }],
             }),
@@ -184,7 +189,7 @@ module.exports = [
             filename: '[name]-bundled.js',
             path: path.resolve(__dirname, 'dist'),
             library: 'push',
-            libraryTarget: 'umd',
+            libraryTarget: 'var',
         },
 
         module: {
