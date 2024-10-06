@@ -17,7 +17,7 @@ export default helper(([date, display]) => {
         return isoweekFormatter(parsedDate)
     }
     if (display == 'isoquarter') {
-        return isoweekFormatter(parsedDate)
+        return isoquarterFormatter(parsedDate)
     }
     if (display == 'isoyear') {
         return isoyearFormatter(parsedDate)
