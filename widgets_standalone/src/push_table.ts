@@ -20,100 +20,129 @@ import {
 } from '@glimmer/core'
 
 class PushTableComponent extends Component {
-    @service dateCalc
-    @service formatter
+    @service dateCalc;
+    @service formatter;
 
-    @tracked currentPage = 1
+    @tracked currentPage = 1;
 
-    @tracked sortColumn = null
-    @tracked sortAscending = true
+    @tracked sortColumn = null;
+    @tracked sortAscending = true;
 
-    @service data
+    get data() {
+        if (this.args.service) {
+            return getOwner(this).lookup("service:" + this.args.service);
+        } else {
+            return getOwner(this).lookup("service:data");
+        }
+    }
+
+    get title() {
+        return this.args.title;
+    }
 
     get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
+        return this._dateColumn || this.args.dateColumn || "date";
     }
 
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.dateColumn));
         } catch (error) {
-            return null
+            return null;
         }
     }
 
     get display() {
-        return this.args.display || 'isoweek'
+        return this.args.display || "isoweek";
     }
 
     get entriesPerPage() {
-        return 20
+        return 20;
     }
 
     get maximumPage() {
-        if (this.latestSummarizedTable) {
-            return (
-                Math.floor(
-                    agg(this.latestSummarizedTable, op.count()) /
-                        this.entriesPerPage
-                ) + 1
-            )
+        if (this.latestSummarizedTableNonNull) {
+            let itemCount = agg(this.latestSummarizedTableNonNull, op.count());
+            let pageCount = Math.floor(itemCount / this.entriesPerPage);
+            let remainder = itemCount % this.entriesPerPage;
+            if (remainder > 0) {
+              pageCount = pageCount + 1;
+            }
+            return pageCount;
         } else {
-            return 1
+            return 1;
         }
     }
 
     get hasPreviousPage() {
-        return this.currentPage > 1
+        return this.currentPage > 1;
     }
 
     get hasNextPage() {
-        return this.currentPage < this.maximumPage
-    }
-
-    get hasPages() {
-        return this.maximumPage > 1
+        return this.currentPage < this.maximumPage;
     }
 
     @cached
     get latestSummarizedTable() {
         try {
             if (this.date == null) {
-                return null
+                return null;
             }
 
-            let totalTable = this.data.summarizedTable
+            let totalTable = this.data.summarizedTable;
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
                     dateColumn: this.dateColumn,
                 })
-                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
+                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
 
             if (this.data.windowFilter) {
                 totalTable = totalTable
                     .params(this.data.windowFilterParams)
-                    .filter(this.data.windowFilter)
+                    .filter(this.data.windowFilter);
             }
 
-            return totalTable
+            return totalTable;
         } catch (error) {
-            console.log('latestSummarizedTable failed: ' + error)
-            return null
+            console.log("latestSummarizedTable failed: " + error);
+            return null;
         }
     }
 
-    get values() {
-        let startIndex = (this.currentPage - 1) * this.entriesPerPage
-        let endIndex = this.currentPage * this.entriesPerPage
+    get latestSummarizedTableNonNull() {
+      var allNullExpr = "d => (" + this.args.columns.filter(function(c) {
+        return !c.isSimpleValue;
+      })
+      .map(function(c) {
+        return "d['" + c.valuePath + "'] > 0"
+      })
+      .join(" || ") + ")";
 
-        if (this.latestSummarizedTable) {
-            return this.latestSummarizedTable
-                .slice(startIndex, endIndex)
-                .objects()
+      var df = this.latestSummarizedTable
+        .filter(allNullExpr);
+
+      if (this.sortColumn) {
+        if (this.sortAscending) {
+          df = df.orderby(this.sortColumn);
         } else {
-            return []
+          df = df.orderby(desc(this.sortColumn));
+        }
+      }
+      return df;
+    }
+
+    get values() {
+        let startIndex = (this.currentPage - 1) * this.entriesPerPage;
+        let endIndex = this.currentPage * this.entriesPerPage;
+
+        if (this.latestSummarizedTableNonNull) {
+            return this.latestSummarizedTableNonNull
+                .slice(startIndex, endIndex)
+                .objects();
+        } else {
+            return [];
         }
     }
 
@@ -122,38 +151,37 @@ class PushTableComponent extends Component {
 
     @action
     nextPage() {
-        this.currentPage = this.currentPage + 1
+        this.currentPage = this.currentPage + 1;
     }
 
     @action
     previousPage() {
-        this.currentPage = this.currentPage - 1
+        this.currentPage = this.currentPage - 1;
     }
 
     @action
     updateColumnSort(sorting) {
         if (sorting == this.sortColumn) {
-            this.sortAscending = !this.sortAscending
+            this.sortAscending = !this.sortAscending;
         } else {
-            this.sortColumn = sorting
+            this.sortColumn = sorting;
         }
     }
 
     get columns() {
-        if (this.args.columns) {
-            return this.args.columns
-        } else {
-            let allColumns = this.latestSummarizedTable.columnNames()
+    if (this.args.columns) {
+        return this.args.columns
+    } else {
+        let allColumns = this.latestSummarizedTableNonNull.columnNames()
 
-            let columnsMapped = allColumns.map(function (c) {
-                return {
-                    name: c,
-                    valuePath: c,
-                }
-            })
+        let columnsMapped = allColumns.map(function (c) {
+            return {
+                name: c,
+                valuePath: c,
+            }
+        })
 
-            return columnsMapped
-        }
+        return columnsMapped
     }
 }
 
@@ -171,7 +199,14 @@ setComponentTemplate(
 								<thead>
 									<tr>
 										{{#each this.columns as |column|}}
-											<td>{{column.name}}</td>
+										  <th>
+											<button
+											  type="button"
+											  {{on "click" (fn this.updateColumnSort column.valuePath)}}
+											>
+											  {{column.name}}
+											</button>
+										  </th>
 										{{/each}}
 									</tr>
 								</thead>
