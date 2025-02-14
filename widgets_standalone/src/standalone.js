@@ -2,9 +2,12 @@ import { renderComponent } from '@glimmerx/core'
 
 import DataService from './data_service'
 import DateCalcService from './date_service'
+import FormatterService from './formatter_service'
 
 import PushSummaryComponent from './push_summary'
-import PushTableComponent from './push_table'
+import SlideComponent from './slide'
+import ReportPage from './report_page'
+//import PushTableComponent from './push_table'
 
 import './style.css'
 
@@ -32,10 +35,11 @@ function embed(component, dataService, args) {
     return element
 }
 
+export { PushSummaryComponent }
+export { SlideComponent }
+export { ReportPage }
+export { DataService, DateCalcService, FormatterService }
 
-export { PushSummaryComponent, PushTableComponent }
-export { DataService, DateCalcService } 
+export { pushEmbed, embed }
 
-export { pushEmbed, embed  }
-
-export { renderComponent  }
+export { renderComponent }

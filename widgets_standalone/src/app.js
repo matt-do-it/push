@@ -2,7 +2,6 @@ import { LIFETIME } from '@starbeam/timeline'
 import { renderComponent } from '@glimmerx/core'
 
 import PushSummaryComponent from './push_summary'
-import PushTableComponent from './push_table'
 
 import AppComponent from './app_component'
 

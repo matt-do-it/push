@@ -41,12 +41,12 @@ export default helper(([date, display]) => {
     }
 
     if (display == 'isoyear') {
-        let startDate = parsedDate
+        let startDate = startDateForHistory(parsedDate, display)
         let endDate = sub(addISOYears(parsedDate, 1), { days: 1 })
         return formatDateHuman(startDate) + ' - ' + formatDateHuman(endDate)
     }
     if (display == 'isoquarter') {
-        let startDate = parsedDate
+        let startDate = startDateForHistory(parsedDate, display)
         let endDate = sub(addISOQuarters(parsedDate, 1), { days: 1 })
         return (
             formatDateHuman(startDate) +
@@ -59,7 +59,7 @@ export default helper(([date, display]) => {
         )
     }
     if (display == 'isoweek') {
-        let startDate = parsedDate
+        let startDate = startDateForHistory(parsedDate, display)
         let endDate = sub(addISOWeeks(parsedDate, 1), { days: 1 })
         return (
             formatDateHuman(startDate) +
@@ -72,6 +72,18 @@ export default helper(([date, display]) => {
         )
     }
 })
+
+function startDateForHistory(dateEnd, display) {
+    if (display == 'isoyear') {
+        return addISOYears(dateEnd, -3)
+    }
+    if (display == 'isoquarter') {
+        return addISOQuarters(dateEnd, -5)
+    }
+    if (display == 'isoweek') {
+        return addISOWeeks(dateEnd, -8)
+    }
+}
 
 function formatDateHuman(d) {
     return format(d, 'dd.MM.yyyy')

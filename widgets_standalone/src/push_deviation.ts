@@ -5,7 +5,7 @@ import { table, agg, op } from 'arquero'
 import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 
-import vegaModifier from './vega_modifier'
+import vegaEmbedModifier from './vega_embed_modifier'
 import dateFormatHelper from './date_format_helper'
 
 import InputComponent from './input_component'
@@ -168,7 +168,7 @@ setComponentTemplate(
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
     		<div class="widget-title">Values</div>
   			{{#each this.specs as |col|}}
-    			<div class="render" {{vegaModifier col}}></div>
+    			<div class="render" {{vegaEmbedModifier this}}></div>
     		{{/each}}
 			<div class="widget-toggle">
 				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>

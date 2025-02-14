@@ -86,21 +86,14 @@
                     .getElementById('withSelection')
                     .appendChild(withSelection)
 
-                let table = embed(
-                    PushTableComponent,
-                    dataServiceByGroup,
-                    {
-                        title: 'Zusammenfassung',
-                        benchmarkTitle: 'Groups',
-                        windowFilter: 'op.equal(d.group, $.group)',
-                        windowFilterParams: { group: 'Group A' },
-                    }
-                )
+                let table = embed(dataServiceByGroup, {
+                    title: 'Zusammenfassung',
+                    benchmarkTitle: 'Groups',
+                    windowFilter: 'op.equal(d.group, $.group)',
+                    windowFilterParams: { group: 'Group A' },
+                })
 
-                document
-                    .getElementById('table')
-                    .appendChild(table)
-
+                document.getElementById('table').appendChild(table)
             })
         </script>
     </head>

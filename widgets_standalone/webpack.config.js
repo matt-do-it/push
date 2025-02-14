@@ -95,6 +95,13 @@ module.exports = [
                 inject: false,
                 scriptLoading: 'module',
             }),
+            new HtmlWebpackPlugin({
+                title: 'Report',
+                filename: 'report.html',
+                template: 'report.html',
+                inject: false,
+                scriptLoading: 'module',
+            }),
             new CopyPlugin({
                 patterns: [{ from: 'vendor', to: 'vendor' }],
             }),
@@ -159,7 +166,7 @@ module.exports = [
             standalone: './src/standalone.js',
         },
         mode: 'development',
-        devtool: false, 
+        devtool: false,
         performance: {
             hints: false,
             maxEntrypointSize: 5120000,

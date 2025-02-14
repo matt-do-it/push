@@ -25,13 +25,20 @@ import {
 import * as d3 from 'd3'
 
 class PushSummaryComponent extends Component {
-    @service data
     @service dateCalc
 
     @tracked _dateColumn
     @tracked _valueColumn
 
     @tracked editMode
+
+    get data() {
+        if (this.args.service) {
+            return getOwner(this).services[this.args.service]
+        } else {
+            return getOwner(this).services.data
+        }
+    }
 
     get title() {
         if (this.isAggregated) {
@@ -429,50 +436,41 @@ class PushSummaryComponent extends Component {
 setComponentTemplate(
     precompileTemplate(
         `
-      <div class="push">
-		  <div class="widget">
-			{{#unless this.editMode}}
-			<div class="widget-view">
-				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-				<div class="widget-title">{{this.title}}</div>
-				<div class="widget-value">{{valueFormatHelper this.value this.format}}</div>
-				<div class="widget-canvas">
-					<canvas width="300" height="40" {{canvasModifier this}}></canvas>
-				</div>	
-				<div class="widget-benchmark">
-						Q25: {{valueFormatHelper this.q25 this.format}}
-						- 
-						M: {{valueFormatHelper this.median this.format}}
-						- 
-						Q75: {{valueFormatHelper this.q75 this.format}}
-				</div>
-				<div class="widget-trend">
-					<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}} </div>
-					<div class="right {{trendColorHelper this.trend}}">{{trendFormatHelper this.trend}}</div>
-				</div>
-				<div class="widget-toggle">
-					<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-				</div>
-			</div>
-			{{/unless}}
-			{{#if this.editMode}}
-			<div class="widget-edit">
-				<div class="widget-edit-title">Bearbeiten</div>
-				<div class="grid grid-cols-3 gap-4">
-					<div class="field">
-						<InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
-					</div>
-					<div class="field">
-						<InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
-					</div>
-				</div>
-				<div class="widget-toggle">
-					<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-				</div>
-			</div>
-			{{/if}}
-		</div>
-  	</div>
+      <div class="push widget">
+<div class="widget-view">
+  <div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
+  <div class="widget-title">{{this.title}}</div>
+  <div class="widget-value">{{valueFormatHelper
+      this.value
+      this.format
+    }}</div>
+  <div class="widget-canvas-fixed">
+    <canvas
+      width="0"
+      height="40"
+      {{canvasModifier this}}
+    >></canvas>
+  </div>
+  {{#if this.showBenchmark}}
+    <div class="text-xs grid">
+      {{this.benchmarkTitle}}: Q25:
+      {{valueFormatHelper this.q25 this.format}}
+      - M:
+      {{valueFormatHelper this.median this.format}}
+      - Q75:
+      {{valueFormatHelper this.q75 this.format}}
+    </div>
+  {{/if}}
+  <div class="grid grid-cols-2">
+    <div class="text-xs grid">⌀ drei
+      {{displayFormatHelper this.display}}:
+      {{valueFormatHelper this.comparison this.format}}
+    </div>
+    <div
+      class="text-xs grid text-right {{trendColorHelper this.trend}}"
+    >{{trendFormatHelper this.trend}}</div>
+  </div>
+</div>  	</div>
     `,
         {
             strictMode: true,

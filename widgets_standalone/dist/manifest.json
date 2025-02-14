@@ -1,5 +1,7 @@
 {
-  "app.js": "auto/app.js",
+  "standalone.js": "auto/standalone.js",
   "vendor/nycflights13.arrow": "auto/vendor/nycflights13.arrow",
-  "index.html": "auto/index.html"
+  "supergraphic.svg": "auto/0cc380dcb05c4aaca232.svg",
+  "report.html": "auto/report.html",
+  "standalone.html": "auto/standalone.html"
 }

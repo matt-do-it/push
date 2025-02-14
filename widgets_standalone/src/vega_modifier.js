@@ -28,9 +28,8 @@ export default setModifierManager(
 
     class VegaModifier {
         modify(args) {
-            let component = args.positional[0]
-
-            const result = embed(this.element, component)
+            let func = args.positional[0]
+            const result = embed(this.element, func)
         }
     }
 )

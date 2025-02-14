@@ -1,7 +1,7 @@
 import Component, { tracked, hbs } from '@glimmerx/component'
 import { service } from '@glimmerx/service'
 import { on, action } from '@glimmer/modifier'
-import { table, agg, op } from 'arquero'
+import { table, agg, op, escape } from 'arquero'
 import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 import { compile } from 'vega-lite'
@@ -12,6 +12,7 @@ import vegaModifier from './vega_modifier'
 import trendColorHelper from './trend_color_helper'
 import trendFormatHelper from './trend_format_helper'
 import dateFormatHelper from './date_format_helper'
+import dateHistoryFormatHelper from './date_history_format_helper'
 
 import InputComponent from './input_component'
 import TextareaComponent from './text_area'
@@ -29,25 +30,52 @@ import * as d3 from 'd3'
 
 class PushHistoryComponent extends Component {
     @service data
+
     @service dateCalc
+    @service formatter
 
-    @tracked _dateColumn
-    @tracked _valueColumn
-
-    @tracked editMode
-
+    @cached
     get title() {
-        return this.args.title || 'History'
+        return this.args.title
     }
 
     @cached
     get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
+        return this.args.dateColumn || 'date'
+    }
+
+    @cached
+    get colorColumn() {
+    	if (this.args.colorColumn) {
+    		return this.args.colorColumn; 
+    	}
+    	
+    	let colorColumn = this.data.groupColumns.filter(function(c) {
+    		return c.endsWith(".color");
+    	})
+    	
+    	if (colorColumn.length > 0) {
+    		return colorColumn[0];
+    	}
+
+        return null;
     }
 
     @cached
     get valueColumn() {
-        return this._valueColumn || this.args.valueColumn || 'value'
+        return this.args.valueColumn || 'value'
+    }
+
+    get display() {
+        return this.args.display || 'isoweek'
+    }
+
+    get format() {
+        return this.args.format || 'number'
+    }
+
+    get showLegend() {
+        return this.args.showLegend || true
     }
 
     @cached
@@ -59,226 +87,95 @@ class PushHistoryComponent extends Component {
         }
     }
 
-    get display() {
-        return this.args.display || 'isoweek'
-    }
-
-    get format() {
-        return this.args.format || 'number'
-    }
-
     @cached
-    get summarizedTable() {
+    get valueTable() {
         try {
             if (this.date == null) {
                 return null
             }
 
-            let totalTable = this.data.summarizedTable
+            let valueTable = this.data.summarizedTable
 
             if (this.data.windowFilter) {
-                totalTable = totalTable
+                valueTable = valueTable
                     .params(this.data.windowFilterParams)
                     .filter(this.data.windowFilter)
             }
 
-            return totalTable
+			valueTable = valueTable
+				.reify()
+				.params({ groupColumns: this.groupColumns })
+				.derive({ groupTitle: escape((d, $) => op.join($.groupColumns.map((c) => d[c]), "|") )})
+				
+            return valueTable
         } catch (error) {
-            console.log('summarizedTable failed: ' + error)
+            console.log('valueTable failed: ' + error)
             return null
-        }
-    }
-
-    get values() {
-        if (this.summarizedTable) {
-            return this.summarizedTable.objects()
-        } else {
-            return []
         }
     }
 
     @cached
     get groupColumns() {
-        let g = [...this.data.groupColumns]
-
-        let dateIndex = g.indexOf(this.dateColumn)
-        if (dateIndex > -1) {
-            g.splice(dateIndex, 1)
-        }
-
-        return g
+    	return this.data.groupColumns.filter(function(c) {
+    		if (c == this.dateColumn || c == this.colorColumn) {
+    			return false; 
+    		} else {
+    			return true; 
+    		}
+    	}.bind(this));
     }
-
+    
     @cached
-    get groupNames() {
-        try {
-            if (this.groupColumns.length > 0) {
-                const uniqueColumnValues: string[][] = this.groupColumns.map(
-                    (col) =>
-                        (
-                            this.data.summarizedTable
-                                .rollup({ col: op.array_agg_distinct(col) })
-                                .object() as any
-                        ).col
-                )
-                // If just one column, don't do cartesian product and make it a 2D array.
-                if (uniqueColumnValues.length === 1) {
-                    return uniqueColumnValues[0].map((group) => [group])
-                }
-                return this.data.cartesian(...uniqueColumnValues)
-            } else {
-                return []
-            }
-        } catch (error) {
+    get values() {
+        if (this.valueTable) {
+            return this.valueTable.objects()
+        } else {
             return []
         }
     }
 
-    @cached
-    get groupTransform() {
-        let groupColumns = this.groupColumns
-
-        if (groupColumns.length > 0) {
-            return {
-                calculate: groupColumns
-                    .map((d) => "datum['" + d + "']")
-                    .join(" + '|' + "),
-                as: 'groupTitle',
-            }
-        } else {
-            return { calculate: "'Gesamt'", as: 'groupTitle' }
-        }
-    }
-
-    @cached
-    get colorTransform() {
-        if (this.args.colorColumn) {
-            return {
-                calculate: "datum['" + this.args.colorColumn + "']",
-                as: 'colorTitle',
-            }
-        }
-
-        let groupColumns = this.groupColumns
-
-        if (groupColumns.length > 0) {
-            return {
-                calculate: groupColumns
-                    .map((d) => "datum['" + d + "']")
-                    .join(" + '|' + "),
-                as: 'colorTitle',
-            }
-        } else {
-            return { calculate: "'Gesamt'", as: 'colorTitle' }
-        }
-    }
-
-    @cached
-    get titleColumn() {
-        return this.args.titleColumn || 'campaign'
-    }
 
     @cached
     get colorMapping() {
-        return {
-            SPRITE: '#5EBD82',
-            COKE: '#37A264',
-        }
+		const colorValues = [
+			'#5EBD82',
+			'#37A264',
+			'#00884A',
+			'#006C3A',
+			'#00512A',
+			'#56B0FF',
+			'#0096E8',
+			'#007BC0',
+			'#00629A',
+			'#71767C',
+		];
+
+    	
+    	if (this.colorColumn && this.groupColumns.length > 0) {
+    		let valueTable = this.valueTable; 
+    		if (valueTable != null) {
+
+    			let colorMapping = valueTable
+    				.params({ 
+    					colorColumn: this.colorColumn, colorValues: colorValues })
+    				.groupby("groupTitle")
+    				.rollup({ "range": (d, $) => op.min(op.recode(d[$.colorColumn] - 1, $.colorValues, "#5EBD82")) })
+    				.rename({ "groupTitle": "domain" });
+    			
+    			return {
+    				domain: colorMapping.column("domain").data, 
+    				range: colorMapping.column("range").data
+    			};
+    			
+    		} 
+    	}
+    	
+    	return {
+    		domain: ["", null], 
+    		range: ["#5EBD82", "#5EBD82"]
+    	}
     }
 
-    @cached
-    get colorColumn() {
-        return this.args.colorColumn || null
-    }
-
-    get valueColumn() {
-        return this.args.valueColumn || 'impressions'
-    }
-
-    @cached
-    get colors() {
-        const colors = [
-            '#5EBD82',
-            '#37A264',
-            '#00884A',
-            '#006C3A',
-            '#00512A',
-            '#56B0FF',
-            '#0096E8',
-            '#007BC0',
-            '#00629A',
-            '#71767C',
-        ]
-        return colors
-    }
-
-    get colorDomain() {
-        if (this.args.colorColumn && !this.args.colorMapping) {
-            let uniqueValues = (
-                this.data.summarizedTable
-                    .rollup({
-                        col: op.array_agg_distinct(this.args.colorColumn),
-                    })
-                    .object() as any
-            ).col
-            return uniqueValues
-        }
-
-        if (this.args.colorColumn && this.args.colorMapping) {
-            let uniqueValues = (
-                this.data.summarizedTable
-                    .rollup({
-                        col: op.array_agg_distinct(this.args.colorColumn),
-                    })
-                    .object() as any
-            ).col
-            return uniqueValues
-        }
-
-        let groupNames = this.groupNames.map((x) => x.join('|'))
-        return groupNames
-    }
-
-    get colorRange() {
-        if (this.args.colorColumn && !this.args.colorMapping) {
-            let colors = this.colors
-
-            let colorDomain = this.colorDomain
-            let colorIndex = 0
-            let colorRange = colorDomain.map((x, i) => {
-                let color = colors[x]
-                return color
-            })
-            return colorRange
-        }
-
-        if (this.args.colorColumn && this.args.colorMapping) {
-            let colors = this.colors
-
-            let colorDomain = this.colorDomain
-            let colorIndex = 0
-            let colorRange = colorDomain.map((x, i) => {
-                let color = this.args.colorMapping[x]
-                return color
-            })
-            return colorRange
-        }
-
-        let colors = this.colors
-
-        let colorDomain = this.colorDomain
-        let colorIndex = 0
-
-        let colorRange = colorDomain.map((x, i) => {
-            let color = colors[colorIndex++]
-            if (colorIndex > this.colors.length - 1) {
-                colorIndex = 0
-            }
-            return color
-        })
-
-        return colorRange
-    }
 
     get vegaTimeUnit() {
         if (this.display == 'isoyear') {
@@ -292,38 +189,47 @@ class PushHistoryComponent extends Component {
         }
     }
 
-    get tooltipColumns() {
-        let columns = [...this.data.groupColumns]
+    get tooltip() {
+        var tooltips = []
 
-        if (this.colorColumn) {
-            columns.splice(columns.indexOf(this.colorColumn), 1)
-        }
-        let tooltipColumns = columns
-            .map(function (x, i) {
-                return { field: x, type: 'ordinal' }
-            })
-            .concat({ field: this.valueColumn, type: 'quantitative' })
+        tooltips.push({
+            field: 'displayDate',
+            type: 'temporal',
+        })
+        this.data.groupColumns.forEach(
+            function (e) {
+                if (e != this.colorColumn && e != this.dateColumn) {
+                    tooltips.push({
+                        field: e.replace(/\./, '\\.'),
+                    })
+                }
+            }.bind(this)
+        )
 
-        return tooltipColumns
+        tooltips.push({
+            field: this.valueColumn,
+            type: 'quantitative',
+            format: this.formatter.formatFor(this.format),
+        })
+
+        return tooltips
     }
 
     markBarSpec() {
-        return {
+        var spec = {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
             description: 'A simple bar chart with embedded data.',
             width: 'container',
             height: 'container',
             data: {
-                values: this.values,
+                values: this.values
             },
             transform: [
                 {
                     calculate:
                         "timeOffset('day', toDate(datum.date), if(dayofyear(timeOffset('day', toDate(datum.date), 3))%7<5,6,-1))",
                     as: 'displayDate',
-                },
-                this.groupTransform,
-                this.colorTransform,
+                }
             ],
             mark: {
                 type: 'bar',
@@ -339,35 +245,35 @@ class PushHistoryComponent extends Component {
                         title: 'Date',
                     },
                 },
-                detail: {
-                    field: 'groupTitle',
-                },
                 color: {
-                    field: 'colorTitle',
+                    field: 'groupTitle',
                     scale: {
-                        domain: this.colorDomain,
-                        range: this.colorRange,
+                        domain: this.colorMapping.domain,
+                        range: this.colorMapping.range,
                     },
-
-                    legend: null,
+                    legend: true,
                 },
                 y: {
                     field: this.valueColumn,
                     type: 'quantitative',
+                    axis: {
+                        format: this.formatter.formatFor(this.format),
+                    },
                 },
-                tooltip: this.tooltipColumns,
+                tooltip: this.tooltip,
             },
         }
+        return spec
     }
 
     markLineSpec() {
-        return {
+        var spec = {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
             description: 'A simple bar chart with embedded data.',
             width: 'container',
             height: 'container',
             data: {
-                values: this.values,
+                values: this.values
             },
             transform: [
                 {
@@ -375,31 +281,15 @@ class PushHistoryComponent extends Component {
                         "timeOffset('day', toDate(datum.date), if(dayofyear(timeOffset('day', toDate(datum.date), 3))%7<5,6,-1))",
                     as: 'displayDate',
                 },
-                this.groupTransform,
-                this.colorTransform,
             ],
             layer: [
                 {
                     mark: {
                         type: 'line',
-                        tooltip: 'true',
+                        tooltip: true,
                         point: true,
                         strokeWidth: 1,
                         opacity: 0.5,
-                    },
-                    encoding: {
-                        detail: {
-                            field: 'groupTitle',
-                        },
-                        color: {
-                            field: 'colorTitle',
-                            scale: {
-                                domain: this.colorDomain,
-                                range: this.colorRange,
-                            },
-
-                            legend: null,
-                        },
                     },
                 },
             ],
@@ -413,14 +303,27 @@ class PushHistoryComponent extends Component {
                         title: 'Date',
                     },
                 },
+                color: {
+                    field: 'groupTitle',
+                    scale: {
+                        domain: this.colorMapping.domain,
+                        range: this.colorMapping.range,
+                    },
+
+                    legend: true,
+                },
                 y: {
                     field: this.valueColumn,
                     type: 'quantitative',
-                    axis: {},
+                    axis: {
+                        format: this.formatter.formatFor(this.format),
+                    },
                 },
-                tooltip: this.tooltipColumns,
+                tooltip: this.tooltip,
             },
         }
+
+        return spec
     }
 
     get compiledVegaSpec() {
@@ -433,70 +336,26 @@ class PushHistoryComponent extends Component {
         }
 
         const vegaSpec = compile(liteSpec, {
-            config: vega_config(),
+            config: this.formatter.vegaConfig,
         }).spec
-
         return vegaSpec
-    }
-
-    @action
-    updateDateColumn(input) {
-        try {
-            this._dateColumn = input
-        } catch (error) {
-            this._dateColumn = null
-        }
-    }
-
-    @action
-    updateValueColumn(input) {
-        try {
-            this._valueColumn = input
-        } catch (error) {
-            this._valueColumn = null
-        }
-    }
-
-    @action
-    toggleEditMode() {
-        this.editMode = !this.editMode
     }
 }
 
 setComponentTemplate(
     precompileTemplate(
         `
-      <div class="push widget">
-        {{#unless this.editMode}}
-      	<div class="widget-view">
-			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-			<div class="font-bold">{{this.title}}</div>
-			<div class="px-4 py-4 aspect-video">
-				<div style="width: 100%; height: 100%" {{vegaModifier this.compiledVegaSpec}}>
-				</div>
+		<div class="widget-view">
+		  <div class="widget-date">{{dateHistoryFormatHelper
+			  this.date
+			  this.display
+			}}</div>
+		  <div class="widget-title">{{this.title}}</div>
+		  <div class="widget-canvas">
+			<div style="width: 100%" {{vegaModifier this.compiledVegaSpec}}>
 			</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
+		  </div>
 		</div>
-		{{/unless}}
-		{{#if this.editMode}}
-    	<div class="widget-edit">
-    		<div class="widget-edit-title">Bearbeiten</div>
-    		<div class="grid grid-cols-3 gap-4">
-    			<div class="field">
-    			    <InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
-				</div>
-    			<div class="field">
-    			    <InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
-				</div>
-    		</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
-    	</div>
-    	{{/if}}
-	  </div>
     `,
         {
             strictMode: true,
@@ -506,6 +365,7 @@ setComponentTemplate(
                 valueFormatHelper,
                 displayFormatHelper,
                 dateFormatHelper,
+                dateHistoryFormatHelper,
                 trendFormatHelper,
                 trendColorHelper,
                 dateFormatHelper,

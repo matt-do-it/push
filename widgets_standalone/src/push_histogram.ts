@@ -4,9 +4,11 @@ import { on, action } from '@glimmer/modifier'
 import { table, agg, op } from 'arquero'
 import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
+import { compile } from 'vega-lite'
 
 import vegaModifier from './vega_modifier'
 import dateFormatHelper from './date_format_helper'
+import valueFormatHelper from './value_format_helper'
 
 import InputComponent from './input_component'
 import TextareaComponent from './text_area'
@@ -25,23 +27,59 @@ const formatDisplay = helper(([name], { greeting }) => {
 class PushHistogramComponent extends Component {
     @service data
 
-    @tracked _dateColumn
-    @tracked _columns
+    @service dateCalc
+    @service formatter
 
-    @tracked editMode
-
-    get values() {
-        return this.latestSummarizedTable.objects()
+    get title() {
+        if (this.isMultiGrouped) {
+            return this.args.title + ' - Median'
+        } else {
+            return this.args.title
+        }
     }
 
-    @cached
     get dateColumn() {
         return this._dateColumn || this.args.dateColumn || 'date'
     }
 
-    @cached
-    get columns() {
-        return this._columns || this.args.columns || 'value'
+    get binColumns() {
+        if (this.args.binColumns) {
+            return this.args.binColumns.split(',')
+        }
+
+        let numberColumns = this.data.numberColumns
+        let filteredNumberColumns = numberColumns.filter(function (c) {
+            return !c.endsWith('Trend') && !c.endsWith('Previous')
+        })
+        return filteredNumberColumns
+    }
+
+    get binColumnsFormatted() {
+        return this.binColumns.map(
+            function (e) {
+                let median = null
+                let q25 = null
+                let q75 = null
+
+                if (
+                    this.latestSummarizedTable &&
+                    this.latestSummarizedTable.columnIndex(e) > -1
+                ) {
+                    median = agg(this.latestSummarizedTable, op.median(e))
+                    q25 = agg(this.latestSummarizedTable, op.quantile(e, 0.25))
+                    q75 = agg(this.latestSummarizedTable, op.quantile(e, 0.75))
+                }
+
+                return {
+                    column: e,
+                    title: e,
+                    median: median,
+                    q25: q25,
+                    q75: q75,
+                    spec: this.compiledVegaSpec(e),
+                }
+            }.bind(this)
+        )
     }
 
     @cached
@@ -53,15 +91,12 @@ class PushHistogramComponent extends Component {
         }
     }
 
-    @cached
     get display() {
-        return this.args.display || 'isoquarter'
+        return this.args.display || 'isoweek'
     }
 
-    get columns() {
-        return (
-            this._columns || this.args.columns || this.data.getNumberColumns()
-        )
+    get format() {
+        return this.args.format || 'number'
     }
 
     @cached
@@ -72,6 +107,7 @@ class PushHistogramComponent extends Component {
             }
 
             let totalTable = this.data.summarizedTable
+
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
@@ -92,44 +128,36 @@ class PushHistogramComponent extends Component {
         }
     }
 
-    get specs() {
-        return this.columns.map((c) => this.vegaSpec(c))
+    get values() {
+        if (this.latestSummarizedTable) {
+            return this.latestSummarizedTable.objects()
+        } else {
+            return []
+        }
     }
 
-    vegaSpec(column) {
-        return {
-            data: {
-                values: this.values,
-            },
-            mark: 'bar',
+    compiledVegaSpec(column) {
+        let liteSpec = {
+            $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+            data: { values: this.values },
+            mark: { type: 'bar', tooltip: true },
+            width: 'container',
             encoding: {
-                x: { field: column, bin: 'true', axis: { labelAngle: 0 } },
+                x: {
+                    field: column,
+                    bin: { maxbins: 20 },
+                    axis: {
+                        format: this.formatter.formatFor(this.format),
+                    },
+                },
                 y: { aggregate: 'count' },
             },
         }
-    }
 
-    @action
-    updateDateColumn(input) {
-        try {
-            this._dateColumn = input
-        } catch (error) {
-            this._dateColumn = null
-        }
-    }
-
-    @action
-    updateColumns(input) {
-        try {
-            this._columns = input.split(',')
-        } catch (error) {
-            this._columns = null
-        }
-    }
-
-    @action
-    toggleEditMode() {
-        this.editMode = !this.editMode
+        const vegaSpec = compile(liteSpec, {
+            config: this.formatter.vegaConfig,
+        }).spec
+        return vegaSpec
     }
 }
 
@@ -137,34 +165,29 @@ setComponentTemplate(
     precompileTemplate(
         `
       <div class="push widget">
-        {{#unless this.editMode}}
-      	<div class="widget-view">
+		{{#each this.binColumnsFormatted as |column|}}
+		  <div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-    		<div class="widget-title">Histogram</div>
-  			{{#each this.specs as |col|}}
-    			<div class="render" {{vegaModifier col}}></div>
-    		{{/each}}
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+			<div class="widget-title">{{this.title}}</div>
+			<div class="widget-canvas">
+			  <div
+				style="width: 100%"
+				{{vegaModifier column.spec}}
+			  >
+			  </div>
 			</div>
-    	</div>
-		{{/unless}}
-		{{#if this.editMode}}
-    	<div class="widget-edit">
-    		<div class="widget-edit-title">Bearbeiten</div>
-    		<div class="grid grid-cols-3 gap-4">
-    			<div class="field">
-    			    <InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
-				</div>
-    			<div class="field">
-    			    <InputComponent @title="Value column" @value={{this.columns}} @onInput={{this.updateColumns}}/>
-				</div>
-    		</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+			<div class="widget-help">{{@help}}</div>
+			<div class="widget-additional">
+			  {{column.title}}: Q25:
+			  {{valueFormatHelper column.q25 this.format}}
+			  - M:
+			  {{valueFormatHelper column.median this.format}}
+			  - Q75:
+			  {{valueFormatHelper column.q75 this.format}}
 			</div>
-    	</div>
-    	{{/if}}
+
+		  </div>
+		{{/each}}
   	</div>
     `,
         {
@@ -173,6 +196,7 @@ setComponentTemplate(
                 on,
                 formatDisplay,
                 dateFormatHelper,
+                valueFormatHelper,
                 vegaModifier,
                 InputComponent,
                 TextareaComponent,

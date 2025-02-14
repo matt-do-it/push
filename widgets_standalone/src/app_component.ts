@@ -6,7 +6,7 @@ import { helper } from '@glimmerx/helper'
 import { hash } from '@glimmer/runtime'
 
 import PushSummaryComponent from './push_summary'
-import PushTableComponent from './push_table'
+//import PushTableComponent from './push_table'
 import PushTimeComponent from './push_time'
 import PushDebugComponent from './push_debug'
 import PushHistogramComponent from './push_histogram'
@@ -107,7 +107,6 @@ setComponentTemplate(
     		<div class="text-2xl font-bold mt-8">
     			Table
     		</div>
-			<PushTableComponent/>
     		<div class="text-2xl font-bold mt-8">
     			Debug
     		</div>
@@ -169,7 +168,6 @@ setComponentTemplate(
                 formatDisplay,
                 hash,
                 PushSummaryComponent,
-                PushTableComponent,
                 PushTimeComponent,
                 PushHistogramComponent,
                 PushHierarchyComponent,

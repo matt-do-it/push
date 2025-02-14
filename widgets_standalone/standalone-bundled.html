@@ -3,7 +3,7 @@
 <html>
     <head>
         <title><%= htmlWebpackPlugin.options.title %></title>
-		<meta charset="utf-8">
+        <meta charset="utf-8" />
         <script src="standalone-bundled.js"></script>
         <script type="module">
             //	import { DataService, PushSummaryComponent, pushEmbed, embedSummary } from 'https://cdn.jsdelivr.net/gh/alldaysunshine/ml-push/widgets_standalone/push_summary/dist/standalone.js';
@@ -46,10 +46,14 @@
                 dataServiceTotal.groupColumns = ['date']
                 dataServiceTotal.rollup = { value: 'op.sum(d.value)' }
 
-                let totals = push.embed(push.PushSummaryComponent, dataServiceTotal, {
-                    title: 'Zusammenfassung',
-                    benchmarkTitle: 'Groups',
-                })
+                let totals = push.embed(
+                    push.PushSummaryComponent,
+                    dataServiceTotal,
+                    {
+                        title: 'Zusammenfassung',
+                        benchmarkTitle: 'Groups',
+                    }
+                )
 
                 document.getElementById('totals').appendChild(totals)
 
@@ -58,10 +62,14 @@
                 dataServiceByGroup.groupColumns = ['group', 'date']
                 dataServiceByGroup.rollup = { value: 'op.sum(d.value)' }
 
-                let byGroup = push.embed(push.PushSummaryComponent, dataServiceByGroup, {
-                    title: 'Zusammenfassung',
-                    benchmarkTitle: 'Groups',
-                })
+                let byGroup = push.embed(
+                    push.PushSummaryComponent,
+                    dataServiceByGroup,
+                    {
+                        title: 'Zusammenfassung',
+                        benchmarkTitle: 'Groups',
+                    }
+                )
 
                 document.getElementById('byGroup').appendChild(byGroup)
 
@@ -79,8 +87,6 @@
                 document
                     .getElementById('withSelection')
                     .appendChild(withSelection)
-
-
             })
         </script>
     </head>

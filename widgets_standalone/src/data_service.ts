@@ -184,7 +184,8 @@ export default class DataService {
         try {
             if (
                 this.groupColumns == undefined ||
-                this.groupColumns.length == 0
+                this.groupColumns.length == 0 ||
+                this.rollup == null
             ) {
                 return this.filteredTable
             }

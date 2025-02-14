@@ -18,14 +18,19 @@
 }
 
 .widget .widget-value {
-    @apply text-4xl font-bold;
+    @apply text-4xl font-extrabold;
 }
 
 .widget .widget-table {
     @apply table;
 }
-.widget .widget-canvas {
-    @apply py-2;
+
+.widget-title {
+    @apply font-bold;
+}
+
+.widget-canvas {
+    @apply px-4 py-4 grow flex aspect-video;
 }
 
 .widget .widget-benchmark {
