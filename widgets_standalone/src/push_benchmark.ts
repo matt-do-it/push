@@ -285,7 +285,7 @@ class PushBenchmarkComponent extends Component {
         const vegaSpec = compile(liteSpec, {
             config: this.formatter.vegaConfig,
         }).spec
-        console.log(vegaSpec)
+
         return vegaSpec
     }
 }
@@ -295,7 +295,7 @@ setComponentTemplate(
         `
       <div class="push widget">
 		<div class="widget-view">
-		  <div class="widget-date">{{dateHistoryFormatHelper
+		  <div class="widget-date">{{dateFormatHelper
 			  this.date
 			  this.display
 			}}</div>

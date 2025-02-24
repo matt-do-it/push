@@ -60,7 +60,7 @@ class PushValuesComponent extends Component {
 
     get columns() {
         return (
-            this._columns || this.args.columns || this.data.getCategoryColumns()
+            this._columns || this.args.columns || this.data.categoryColumns
         )
     }
 
@@ -150,7 +150,6 @@ setComponentTemplate(
     precompileTemplate(
         `
       <div class="push widget">
-        {{#unless this.editMode}}
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
     		<div class="widget-title">Values</div>
@@ -161,26 +160,6 @@ setComponentTemplate(
 				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
 			</div>
     	</div>
-		{{/unless}}
-		{{#if this.editMode}}
-    	<div class="widget-edit">
-    		<div class="widget-edit-title">Bearbeiten</div>
-    		<div class="grid grid-cols-3 gap-4">
-    			<div class="field">
-    			    <InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
-				</div>
-    			<div class="field">
-    			    <InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
-				</div>
-    			<div class="field">
-    			    <InputComponent @title="Bin columns" @value={{this.columns}} @onInput={{this.updateColumns}}/>
-				</div>
-    		</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
-    	</div>
-    	{{/if}}
   	</div>
     `,
         {

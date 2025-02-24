@@ -1,6 +1,6 @@
 import * as d3 from 'd3'
 
-let germanLocale = d3.formatLocale({
+export const germanLocaleSpec = {
     decimal: ',',
     thousands: '.',
     grouping: [3],
@@ -47,7 +47,10 @@ let germanLocale = d3.formatLocale({
         'Nov',
         'Dez',
     ],
-})
+};
+
+let germanLocale = d3.formatLocale(germanLocaleSpec);
+
 
 export default function currentLocale() {
     return germanLocale

@@ -46,6 +46,7 @@
         "d3": "^7.9.0",
         "date-fns": "^4.1.0",
         "dayjs": "^1.11.11",
+        "mocha": "^11.1.0",
         "postcss-prefix-selector": "^1.16.1",
         "ts-node": "^10.9.2",
         "vega": "^5.29.0",

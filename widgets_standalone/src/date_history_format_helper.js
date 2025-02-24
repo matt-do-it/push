@@ -67,7 +67,7 @@ export default helper(([date, display]) => {
             formatDateHuman(endDate) +
             ' (' +
             'W' +
-            getISOWeek(startDate) +
+            getISOWeek(endDate) +
             ')'
         )
     }

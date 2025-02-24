@@ -25,8 +25,6 @@ import {
 } from '@glimmer/core'
 
 class PushTableComponent extends Component {
-    @service data
-
     @service dateCalc
     @service formatter
 
@@ -39,9 +37,17 @@ class PushTableComponent extends Component {
     @tracked sortColumn = null
     @tracked sortAscending = false
 
+    get data() {
+        if (this.args.service) {
+            return getOwner(this).services[this.args.service]
+        } else {
+            return getOwner(this).services.data
+        }
+    }
+
     constructor(owner, args) {
         super(owner, args)
-
+        
         if (this.args.offset) {
             this.offset = parseInt(this.args.offset)
         }
@@ -50,9 +56,13 @@ class PushTableComponent extends Component {
             this.limit = parseInt(this.args.limit)
         }
 
-        if (this.args.columns && this.args.columns.length > 1) {
-            this.sortColumn = this.args.columns[1].valuePath
-        }
+		if (this.args.sortColumn) {
+			this.sortColumn = this.args.sortColumn; 
+		} else {
+			if (this.args.columns && this.args.columns.length > 1) {
+				this.sortColumn = this.args.columns[1].valuePath
+			}
+		}
     }
 
     get title() {
@@ -160,9 +170,11 @@ class PushTableComponent extends Component {
     }
 
     get values() {
+    console.log(this.latestSummarizedTableNonNull.reify());
         let startIndex = this.offset
         let endIndex = this.offset + this.limit - 1
-
+console.log(startIndex);
+console.log(endIndex);
         if (this.latestSummarizedTableNonNull) {
             return this.latestSummarizedTableNonNull
                 .slice(startIndex, endIndex)
@@ -308,7 +320,7 @@ class PushTableComponent extends Component {
                 isActive: false,
             })
         }
-        console.log(pageList)
+
         return pageList
     }
 
@@ -324,7 +336,7 @@ setComponentTemplate(
         	<div class="widget-view">
   				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
   				<div class="widget-title">{{this.title}}</div>
-      <table class="table border border-solid border-slate-100 rounded-md">
+      <table class="table table-fixed border border-solid border-slate-100 rounded-md flex-grow">
         <thead>
           <tr>
             {{#each this.columns as |column|}}

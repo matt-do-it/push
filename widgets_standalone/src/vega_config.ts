@@ -1,5 +1,12 @@
-const vega_config = function () {
-    return {}
+import formats from './formats';
+import { germanLocaleSpec } from './locale';
+
+
+const vegaConfig = function () {
+        return {
+            numberFormat: formats.numberFormat,
+            locale: { number: germanLocaleSpec }
+        }
 }
 
-export default vega_config
+export default vegaConfig; 

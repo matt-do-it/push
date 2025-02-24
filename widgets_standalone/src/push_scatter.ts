@@ -67,7 +67,7 @@ class PushScatterComponent extends Component {
         if (this.args.columns) {
             return this.args.columns
         } else {
-            return this.data.getCategoryColumns()
+            return this.data.categoryColumns
         }
     }
 

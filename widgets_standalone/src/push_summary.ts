@@ -5,7 +5,8 @@ import { table, agg, op } from 'arquero'
 import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 
-import valueFormatHelper, { numberFormatter } from './value_format_helper'
+import formatterFor from './formatters'
+import valueFormatHelper from './value_format_helper'
 import displayFormatHelper from './display_format_helper'
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
@@ -27,11 +28,6 @@ import * as d3 from 'd3'
 class PushSummaryComponent extends Component {
     @service dateCalc
 
-    @tracked _dateColumn
-    @tracked _valueColumn
-
-    @tracked editMode
-
     get data() {
         if (this.args.service) {
             return getOwner(this).services[this.args.service]
@@ -41,129 +37,116 @@ class PushSummaryComponent extends Component {
     }
 
     get title() {
-        if (this.isAggregated) {
-            return this.args.title + ' - Median'
+        if (this.isMultiGrouped) {
+            return this.args.title + " - Median";
         } else {
-            return this.args.title
+            return this.args.title;
         }
     }
 
-    @cached
     get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
+        return this._dateColumn || this.args.dateColumn || "date";
     }
 
-    @cached
     get valueColumn() {
-        return this._valueColumn || this.args.valueColumn || 'value'
+        return this._valueColumn || this.args.valueColumn || "impressions";
     }
 
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.dateColumn));
         } catch (error) {
-            return null
+            return null;
         }
     }
 
-    @cached
-    get format() {
-        return this.args.format || 'number'
-    }
-
-    @cached
     get display() {
-        return this.args.display || 'isoquarter'
-    }
-
-    @cached
-    get windowFilter() {
-        return this.args.windowFilter
-    }
-
-    @cached
-    get windowFilterParams() {
-        return this.args.windowFilterParams
+        return this.args.display || "isoweek";
     }
 
     @cached
     get isMultiGrouped() {
         if (
-            this.latestWindowedTable &&
-            this.latestWindowedTable.columnIndex(this.valueColumn) > -1 &&
-            this.latestWindowedTable.numRows() > 1
+            this.latestSummarizedWindowedTable &&
+            this.latestSummarizedWindowedTable.columnIndex(this.valueColumn) >
+                -1 &&
+            this.latestSummarizedWindowedTable.numRows() > 1
         ) {
-            return true
+            return true;
         } else {
-            return false
+            return false;
         }
     }
 
     get showTrend() {
         if (this.args.showTrend !== undefined) {
-            return this.args.showTrend
+            return this.args.showTrend;
         } else {
-            return true
+            return true;
         }
     }
 
     get showBenchmark() {
         if (this.isMultiGrouped || this.data.windowFilter) {
-            return true
+            return true;
         } else {
-            return false
+            return false;
         }
     }
 
+    get benchmarkTitle() {
+        return this.args.benchmarkTitle;
+    }
+
     @cached
-    get latestTotalTable() {
+    get latestSummarizedTable() {
         try {
             if (this.date == null) {
-                return null
+                return null;
             }
 
-            let totalTable = this.data.summarizedTable
+            let totalTable = this.data.summarizedTable;
 
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
                     dateColumn: this.dateColumn,
                 })
-                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
-
-            return totalTable
+                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
+            return totalTable;
         } catch (error) {
-            console.log('latestFullTable failed: ' + error)
-            return null
+            console.log("latestSummarizedTable failed: " + error);
+            return null;
         }
     }
 
     @cached
-    get latestWindowedTable() {
+    get latestSummarizedWindowedTable() {
         try {
             if (this.date == null) {
-                return null
+                return null;
             }
 
-            let totalTable = this.data.summarizedTable
+            let totalTable = this.data.summarizedTable;
 
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
                     dateColumn: this.dateColumn,
                 })
-                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
+                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
 
-            if (this.windowFilter) {
+            if (this.data.windowFilter) {
                 totalTable = totalTable
-                    .params(this.windowFilterParams)
-                    .filter(this.windowFilter)
+                    .params(this.data.windowFilterParams)
+                    .filter(this.data.windowFilter);
             }
-            return totalTable
+
+            return totalTable;
         } catch (error) {
-            console.log('latestWindowedTable failed: ' + error)
-            return null
+            console.log("latestSummarizedWindowedTable failed: " + error);
+            return null;
         }
     }
 
@@ -171,265 +154,296 @@ class PushSummaryComponent extends Component {
     get trendWindowedTable() {
         try {
             if (this.date == null) {
-                return null
+                return null;
             }
 
-            let trendTable = this.data.summarizedTable
+            let trendTable = this.data.summarizedTable;
 
             trendTable = trendTable
                 .params({
-                    dateSet: this.trendDateSet,
+                    dateSet: [
+                        this.date,
+                        this.dateCalc.subISOPeriods(this.date, 1, this.display),
+                        this.dateCalc.subISOPeriods(this.date, 2, this.display),
+                    ],
                     dateColumn: this.dateColumn,
                 })
-                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
+                .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]));
 
-            if (this.windowFilter) {
+            if (this.data.windowFilter) {
                 trendTable = trendTable
-                    .params(this.windowFilterParams)
-                    .filter(this.windowFilter)
+                    .params(this.data.windowFilterParams)
+                    .filter(this.data.windowFilter);
             }
-            return trendTable
+            return trendTable.reify();
         } catch (error) {
-            return null
-        }
-    }
-
-    @cached
-    get trendDateSet() {
-        return [
-            this.date,
-            this.dateCalc.previousDate(this.date, this.display, 1),
-            this.dateCalc.previousDate(this.date, this.display, 2),
-        ]
-    }
-
-    @cached
-    get isAggregated() {
-        if (
-            this.latestWindowedTable &&
-            this.latestWindowedTable.columnIndex(this.valueColumn) > -1 &&
-            this.latestWindowedTable.numRows() > 1
-        ) {
-            return true
-        } else {
-            return false
+            console.log("trendWindowedTable failed: " + error);
+            return null;
         }
     }
 
     @cached
     get value() {
         if (
-            this.latestWindowedTable &&
-            this.latestWindowedTable.columnIndex(this.valueColumn) > -1
+            this.latestSummarizedWindowedTable &&
+            this.latestSummarizedWindowedTable.columnIndex(this.valueColumn) >
+                -1
         ) {
-            return agg(this.latestWindowedTable, op.median(this.valueColumn))
+            if (this.isMultiGrouped) {
+                return agg(
+                    this.latestSummarizedWindowedTable,
+                    op.median(this.valueColumn),
+                );
+            } else {
+                return this.latestSummarizedWindowedTable.get(
+                    this.valueColumn,
+                    0,
+                );
+            }
         } else {
-            return null
+            return null;
         }
     }
 
     @cached
     get median() {
         if (
-            this.latestTotalTable &&
-            this.latestTotalTable.columnIndex(this.valueColumn) > -1
+            this.latestSummarizedTable &&
+            this.latestSummarizedTable.columnIndex(this.valueColumn) > -1
         ) {
-            return agg(this.latestTotalTable, op.median(this.valueColumn))
+            return agg(this.latestSummarizedTable, op.median(this.valueColumn));
         } else {
-            return null
+            return null;
         }
     }
 
     @cached
     get q25() {
         if (
-            this.latestTotalTable &&
-            this.latestTotalTable.columnIndex(this.valueColumn) > -1
+            this.latestSummarizedTable &&
+            this.latestSummarizedTable.columnIndex(this.valueColumn) > -1
         ) {
             return agg(
-                this.latestTotalTable,
-                op.quantile(this.valueColumn, 0.25)
-            )
+                this.latestSummarizedTable,
+                op.quantile(this.valueColumn, 0.25),
+            );
         } else {
-            return null
+            return null;
         }
     }
 
     @cached
     get q75() {
         if (
-            this.latestTotalTable &&
-            this.latestTotalTable.columnIndex(this.valueColumn) > -1
+            this.latestSummarizedTable &&
+            this.latestSummarizedTable.columnIndex(this.valueColumn) > -1
         ) {
             return agg(
-                this.latestTotalTable,
-                op.quantile(this.valueColumn, 0.75)
-            )
+                this.latestSummarizedTable,
+                op.quantile(this.valueColumn, 0.75),
+            );
         } else {
-            return null
+            return null;
         }
     }
 
     @cached
     get trend() {
+        if (
+            !this.isMultiGrouped &&
+            this.latestSummarizedWindowedTable &&
+            this.latestSummarizedWindowedTable.columnIndex(
+                this.valueColumn + "Trend",
+            ) > -1
+        ) {
+            if (this.isMultiGrouped) {
+                return agg(
+                    this.latestSummarizedWindowedTable,
+                    op.median(this.valueColumn + "Trend"),
+                );
+            } else {
+                return this.latestSummarizedWindowedTable.get(
+                    this.valueColumn + "Trend",
+                    0,
+                );
+            }
+        }
+
         if (this.value && this.comparison) {
-            return this.value / this.comparison - 1
+            return this.value / this.comparison - 1;
         } else {
-            return null
+            return null;
         }
     }
 
     @cached
     get comparison() {
         if (
+            !this.isMultiGrouped &&
+            this.latestSummarizedWindowedTable &&
+            this.latestSummarizedWindowedTable.columnIndex(
+                this.valueColumn + "Previous",
+            ) > -1
+        ) {
+            if (this.isMultiGrouped) {
+                return agg(
+                    this.latestSummarizedWindowedTable,
+                    op.median(this.valueColumn + "Previous"),
+                );
+            } else {
+                return this.latestSummarizedWindowedTable.get(
+                    this.valueColumn + "Previous",
+                    0,
+                );
+            }
+        }
+
+        if (
             this.trendWindowedTable &&
             this.trendWindowedTable.columnIndex(this.valueColumn) > -1
         ) {
-            let dateIndex = this.data.groupColumns.indexOf('date')
+            if (this.isMultiGrouped) {
+                let remainingGroups = this.data.groupColumns.filter(
+                    function (c) {
+                        return c != "date";
+                    },
+                );
 
-            let groupColumns = this.data.groupColumns.filter(
-                function (e) {
-                    return e != this.dateColumn
-                }.bind(this)
-            )
+                let rolledupTable = this.trendWindowedTable
+                    .reify()
+                    .groupby(this.dateColumn)
+                    .rollup({
+                        value: op.median(this.valueColumn),
+                    });
 
-            let rolledupTable = this.trendWindowedTable
-                .reify()
-                .groupby(groupColumns)
-                .rollup({
-                    mean: op.mean(this.valueColumn),
-                    values: op.count(),
-                })
-                .filter((d) => op.equal(d.values, 3))
-            return agg(rolledupTable, op.median('mean'))
+                return agg(rolledupTable, op.mean("value"));
+            } else {
+                if (this.trendWindowedTable.numRows() != 3) {
+                    return null;
+                }
+
+                return agg(this.trendWindowedTable, op.mean(this.valueColumn));
+            }
         } else {
-            return null
+            return null;
         }
+    }
+
+    get format() {
+        return this.args.format || "number";
     }
 
     @action
     drawCanvas(canvas) {
-        const ctx = canvas.getContext('2d')
+        const ctx = canvas.getContext("2d");
 
-        let canvasWidth = canvas.width
-        let canvasHeight = canvas.height
+        let canvasWidth = canvas.width;
+        let canvasHeight = canvas.height;
 
         let offsetValue = {
             top: 6,
             bottom: 26,
-        }
+        };
         let offsetBenchmark = {
             top: 0,
             bottom: 20,
-        }
+        };
 
         let maxValue =
-            d3.max([0, this.value, this.median, this.q25, this.q75]) * 1.1
+            d3.max([
+                0,
+                this.value,
+                this.median,
+                this.q25,
+                this.q75,
+                this.comparison,
+            ]) * 1.1;
 
-        let xScale = d3.scaleLinear([0, maxValue], [0, canvasWidth])
-
-        // Clear background
-        ctx.fillStyle = '#FFFFFF'
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+        let xScale = d3.scaleLinear([0, maxValue], [0, canvasWidth]);
 
         // Draw background
-        ctx.fillStyle = '#F2F2F2'
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Draw background
+        ctx.fillStyle = "#F2F2F2";
         ctx.fillRect(
             0,
             offsetBenchmark.top,
             canvasWidth,
-            canvasHeight - offsetBenchmark.top - offsetBenchmark.bottom
-        )
+            canvasHeight - offsetBenchmark.top - offsetBenchmark.bottom,
+        );
 
         if (this.showBenchmark) {
             // Draw Quantiles
-            ctx.fillStyle = '#D7DDE4'
+            ctx.fillStyle = "#D7DDE4";
             ctx.fillRect(
                 xScale(this.q25),
                 offsetBenchmark.top,
                 xScale(this.q75) - xScale(this.q25),
-                canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top
-            )
+                canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top,
+            );
 
             // Draw Median
-            ctx.fillStyle = '#2B3440'
+            ctx.fillStyle = "#2B3440";
             ctx.fillRect(
                 xScale(this.median) - 2,
                 offsetBenchmark.top,
                 4,
-                canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top
-            )
+                canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top,
+            );
         }
 
         // Draw value
-        ctx.fillStyle = 'rgb(31, 119, 180)'
+        ctx.fillStyle = "rgb(31, 119, 180)";
         ctx.fillRect(
             0,
             offsetValue.top,
             xScale(this.value),
-            canvasHeight - offsetValue.bottom - offsetValue.top
-        )
+            canvasHeight - offsetValue.bottom - offsetValue.top,
+        );
 
         if (this.showTrend) {
-            ctx.fillStyle = 'rgb(174, 199, 232)'
+            ctx.fillStyle = "rgb(174, 199, 232)";
             ctx.fillRect(
                 xScale(this.comparison) - 2,
                 offsetBenchmark.top,
                 4,
-                canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top
-            )
+                canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top,
+            );
         }
         // Draw axis
-        let axisY = canvas.height - offsetBenchmark.bottom
+        let axisY = canvas.height - offsetBenchmark.bottom;
 
-        let xTicks = xScale.ticks()
-        let tickSize = 6
+        let xTicks = xScale.ticks(3);
+        let tickSize = 6;
 
-        ctx.strokeStyle = '#1f2937'
-        ctx.beginPath()
+        ctx.strokeStyle = "#1f2937";
+        ctx.beginPath();
         xTicks.forEach((d) => {
-            ctx.moveTo(xScale(d), axisY)
-            ctx.lineTo(xScale(d), axisY + tickSize)
-        })
-        ctx.stroke()
+            ctx.moveTo(xScale(d), axisY);
+            ctx.lineTo(xScale(d), axisY + tickSize);
+        });
+        ctx.stroke();
 
-        ctx.beginPath()
-        ctx.moveTo(0, axisY + tickSize)
-        ctx.lineTo(0, axisY)
-        ctx.lineTo(canvasWidth, axisY)
-        ctx.lineTo(canvasWidth, axisY + tickSize)
-        ctx.stroke()
+        ctx.beginPath();
+        ctx.moveTo(0, axisY + tickSize);
+        ctx.lineTo(0, axisY);
+        ctx.lineTo(canvasWidth, axisY);
+        ctx.lineTo(canvasWidth, axisY + tickSize);
+        ctx.stroke();
 
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
-        ctx.fillStyle = 'black'
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillStyle = "black";
         xTicks.forEach((d) => {
-            ctx.beginPath()
-            ctx.fillText(numberFormatter(d), xScale(d), axisY + tickSize)
-        })
-    }
-
-    @action
-    updateDateColumn(input) {
-        try {
-            this._dateColumn = input
-        } catch (error) {
-            this._dateColumn = null
-        }
-    }
-
-    @action
-    updateValueColumn(input) {
-        try {
-            this._valueColumn = input
-        } catch (error) {
-            this._valueColumn = null
-        }
-    }
-
-    @action
-    toggleEditMode() {
-        this.editMode = !this.editMode
+            ctx.beginPath();
+            ctx.fillText(
+                formatterFor(this.format)(d),
+                xScale(d),
+                axisY + tickSize,
+            );
+        });
     }
 }
 
@@ -470,7 +484,7 @@ setComponentTemplate(
       class="text-xs grid text-right {{trendColorHelper this.trend}}"
     >{{trendFormatHelper this.trend}}</div>
   </div>
-</div>  	</div>
+</div> 	</div>
     `,
         {
             strictMode: true,

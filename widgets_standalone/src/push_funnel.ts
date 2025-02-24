@@ -113,6 +113,20 @@ class PushFunnelComponent extends Component {
 				.reify()
 				.params({ groupColumns: this.groupColumns })
 				.derive({ groupTitle: escape((d, $) => op.join($.groupColumns.map((c) => d[c]), "|") )})
+	
+			var anyNonNullExpr =
+				'd => (' +
+				this.valueColumns
+					.filter(function (c) {
+						return !c.isSimpleValue
+					})
+					.map(function (c) {
+						return "d['" + c + "'] > 0"
+					})
+					.join(' || ') +
+				')'
+
+			valueTable = valueTable.filter(anyNonNullExpr)
 
             return valueTable
         } catch (error) {
@@ -234,7 +248,6 @@ class PushFunnelComponent extends Component {
 			'#71767C',
 		];
 
-    	
     	if (this.colorColumn && this.groupColumns.length > 0) {
     		let valueTable = this.valueTable; 
     		if (valueTable != null) {
@@ -243,8 +256,13 @@ class PushFunnelComponent extends Component {
     				.params({ 
     					colorColumn: this.colorColumn, colorValues: colorValues })
     				.groupby("groupTitle")
-    				.rollup({ "range": (d, $) => op.min(op.recode(d[$.colorColumn] - 1, $.colorValues, "#5EBD82")) })
-    				.rename({ "groupTitle": "domain" });
+    				.rollup({ 
+    					"range": (d, $) => op.min(op.recode(d[$.colorColumn] - 1, $.colorValues, "#5EBD82")), 
+    					"order": (d, $) => op.min(d[$.colorColumn])
+    				 })
+    				.rename({ "groupTitle": "domain" })
+    				.orderby("order")
+    				.reify(); 
     			
     			return {
     				domain: colorMapping.column("domain").data, 
@@ -258,8 +276,8 @@ class PushFunnelComponent extends Component {
     		domain: ["", null], 
     		range: ["#5EBD82", "#5EBD82"]
     	}
+    	
     }
-
 
     get vegaTimeUnit() {
         if (this.display == 'isoyear') {
@@ -299,6 +317,14 @@ class PushFunnelComponent extends Component {
         return tooltips
     }
 
+	get legendTitle() {
+		if (this.groupColumns.length > 0) {
+			return this.groupColumns[0];
+		} else {
+			return "Legende";
+		}
+	}
+	
     get compiledVegaSpec() {
         let liteSpec = {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -323,7 +349,9 @@ class PushFunnelComponent extends Component {
                         domain: this.colorMapping.domain,
                         range: this.colorMapping.range,
                     },
-                    legend: true,
+                    legend: {
+                    	title: this.legendTitle
+                    },
                 },
                         x: {
                             field: 'phase',

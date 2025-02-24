@@ -128,7 +128,7 @@ export default class DataService {
         return typeof firstValue
     }
 
-    getCategoryColumns(): string[] {
+    get categoryColumns(): string[] {
         const colNames = this.summarizedTable.columnNames()
         const binnnableStringColumns: string[] = []
         for (const colName of colNames) {
@@ -142,7 +142,7 @@ export default class DataService {
         return binnnableStringColumns
     }
 
-    getNumberColumns(): string[] {
+    get numberColumns(): string[] {
         const colNames = this.summarizedTable.columnNames()
         const numberColumns: string[] = []
         for (const colName of colNames) {

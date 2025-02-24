@@ -13,11 +13,12 @@ import trendColorHelper from './trend_color_helper'
 import trendFormatHelper from './trend_format_helper'
 import dateFormatHelper from './date_format_helper'
 import dateHistoryFormatHelper from './date_history_format_helper'
+import { formatFor } from './formats'
 
 import InputComponent from './input_component'
 import TextareaComponent from './text_area'
 
-import vega_config from './vega_config'
+import vegaConfig from './vega_config'
 
 import {
     precompileTemplate,
@@ -32,7 +33,6 @@ class PushHistoryComponent extends Component {
     @service data
 
     @service dateCalc
-    @service formatter
 
     @cached
     get title() {
@@ -87,6 +87,14 @@ class PushHistoryComponent extends Component {
         }
     }
 
+	get legendTitle() {
+		if (this.groupColumns.length > 0) {
+			return this.groupColumns[0];
+		} else {
+			return "Legende";
+		}
+	}
+
     @cached
     get valueTable() {
         try {
@@ -104,9 +112,26 @@ class PushHistoryComponent extends Component {
 
 			valueTable = valueTable
 				.reify()
-				.params({ groupColumns: this.groupColumns })
-				.derive({ groupTitle: escape((d, $) => op.join($.groupColumns.map((c) => d[c]), "|") )})
-				
+				.params({ groupColumns: this.groupColumns, colorColumn: this.colorColumn })
+				.derive({ 
+					groupTitle: escape((d, $) => op.join($.groupColumns.map((c) => d[c]), "|")), 
+					sortOrder: (d, $) => d[$.colorColumn]
+				});
+
+			var anyNonNullExpr =
+				'd => (' +
+				[this.valueColumn]
+					.filter(function (c) {
+						return !c.isSimpleValue
+					})
+					.map(function (c) {
+						return "d['" + c + "'] > 0"
+					})
+					.join(' || ') +
+				')'
+
+			valueTable = valueTable.filter(anyNonNullExpr)
+
             return valueTable
         } catch (error) {
             console.log('valueTable failed: ' + error)
@@ -159,9 +184,14 @@ class PushHistoryComponent extends Component {
     				.params({ 
     					colorColumn: this.colorColumn, colorValues: colorValues })
     				.groupby("groupTitle")
-    				.rollup({ "range": (d, $) => op.min(op.recode(d[$.colorColumn] - 1, $.colorValues, "#5EBD82")) })
-    				.rename({ "groupTitle": "domain" });
-    			
+    				.rollup({ 
+    					"range": (d, $) => op.min(op.recode(d[$.colorColumn] - 1, $.colorValues, "#5EBD82")), 
+    					"order": (d, $) => op.min(d[$.colorColumn])
+    				 })
+    				.rename({ "groupTitle": "domain" })
+    				.orderby("order")
+    				.reify(); 
+    			        				
     			return {
     				domain: colorMapping.column("domain").data, 
     				range: colorMapping.column("range").data
@@ -169,7 +199,7 @@ class PushHistoryComponent extends Component {
     			
     		} 
     	}
-    	
+    	    	
     	return {
     		domain: ["", null], 
     		range: ["#5EBD82", "#5EBD82"]
@@ -209,7 +239,7 @@ class PushHistoryComponent extends Component {
         tooltips.push({
             field: this.valueColumn,
             type: 'quantitative',
-            format: this.formatter.formatFor(this.format),
+            format: formatFor(this.format),
         })
 
         return tooltips
@@ -251,14 +281,19 @@ class PushHistoryComponent extends Component {
                         domain: this.colorMapping.domain,
                         range: this.colorMapping.range,
                     },
-                    legend: true,
+                    legend: {
+                    	title: this.legendTitle
+                    },
                 },
                 y: {
                     field: this.valueColumn,
                     type: 'quantitative',
                     axis: {
-                        format: this.formatter.formatFor(this.format),
-                    },
+                        format: formatFor(this.format),
+                    }
+                },
+                order: {
+                	field: "sortOrder"
                 },
                 tooltip: this.tooltip,
             },
@@ -309,17 +344,18 @@ class PushHistoryComponent extends Component {
                         domain: this.colorMapping.domain,
                         range: this.colorMapping.range,
                     },
-
-                    legend: true,
+                    legend: {
+                    	title: this.legendTitle,
+                    },
                 },
                 y: {
                     field: this.valueColumn,
                     type: 'quantitative',
                     axis: {
-                        format: this.formatter.formatFor(this.format),
-                    },
+                        format: formatFor(this.format),
+                    }  
                 },
-                tooltip: this.tooltip,
+                tooltip: this.tooltip
             },
         }
 
@@ -336,8 +372,9 @@ class PushHistoryComponent extends Component {
         }
 
         const vegaSpec = compile(liteSpec, {
-            config: this.formatter.vegaConfig,
+            config: vegaConfig(),
         }).spec
+        
         return vegaSpec
     }
 }

@@ -73,7 +73,7 @@ presetService.presets = [
                 date: '2024-01-01',
                 campaign: 'PEPSI',
                 channel: 'ONE',
-                color: 1,
+                color: 6,
                 impressions: 700,
             },
             {
@@ -91,7 +91,7 @@ presetService.presets = [
                 impressions: 700,
             },
         ],
-        groupColumns: ['date', 'campaign', 'channel', 'color'],
+        groupColumns: ['date', 'campaign', 'color'],
         filter: '',
         rollup: { impressions: 'op.sum(d.impressions)' },
         derive: { value: 'd.impressions' },

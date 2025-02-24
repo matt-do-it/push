@@ -6,7 +6,11 @@ import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 import { compile } from 'vega-lite'
 
+import vegaConfig from './vega_config'
 import vegaModifier from './vega_modifier'
+
+import { formatFor } from './formats';
+
 import dateFormatHelper from './date_format_helper'
 import valueFormatHelper from './value_format_helper'
 
@@ -28,7 +32,6 @@ class PushHistogramComponent extends Component {
     @service data
 
     @service dateCalc
-    @service formatter
 
     get title() {
         if (this.isMultiGrouped) {
@@ -147,16 +150,14 @@ class PushHistogramComponent extends Component {
                     field: column,
                     bin: { maxbins: 20 },
                     axis: {
-                        format: this.formatter.formatFor(this.format),
+                        format: formatFor(this.format),
                     },
                 },
                 y: { aggregate: 'count' },
             },
         }
 
-        const vegaSpec = compile(liteSpec, {
-            config: this.formatter.vegaConfig,
-        }).spec
+        const vegaSpec = compile(liteSpec).spec
         return vegaSpec
     }
 }
