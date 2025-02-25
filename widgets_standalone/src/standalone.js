@@ -32,8 +32,7 @@ function embed(component, dataService, args) {
     return element
 }
 
-
 export { PushSummaryComponent, PushTableComponent }
-export { DataService } 
+export { DataService }
 
-export { pushEmbed, embed  }
+export { pushEmbed, embed }

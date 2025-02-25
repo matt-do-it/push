@@ -1,7 +1,6 @@
 import { helper } from '@glimmerx/helper'
 
 export default helper(([display, format]) => {
-    return 'Wochen'
     if (display == 'isoweek') {
         return 'Wochen'
     }

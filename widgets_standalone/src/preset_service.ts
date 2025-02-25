@@ -1,15 +1,51 @@
 import { tracked } from '@glimmerx/component'
 import { table, op, loadArrow, from } from 'arquero'
 
-const UNIQUE_COLS_PCTG = 0.1
-const UNIQUE_COLS_PCTG_NMB = 0.01
-
 export default class PresetService {
     @tracked presets
 
-    constructor() {}
+    constructor() {
+        this.presets = {
+            default: {
+                values: [
+                    {
+                        date: '2024-07-01',
+                        group: 'Group A',
+                        value: 500,
+                    },
+                    {
+                        date: '2024-07-01',
+                        group: 'Group B',
+                        value: 700,
+                    },
+                    {
+                        date: '2024-04-01',
+                        group: 'Group A',
+                        value: 200,
+                    },
+                    {
+                        date: '2024-04-01',
+                        group: 'Group B',
+                        value: 300,
+                    },
+                    {
+                        date: '2024-01-01',
+                        group: 'Group A',
+                        value: 100,
+                    },
+                    {
+                        date: '2024-01-01',
+                        group: 'Group B',
+                        value: 700,
+                    },
+                ],
+            },
+        }
+    }
 
-    async load(dataService, preset) {
+    async load(dataService, presetName) {
+        let preset = this.presets[presetName]
+
         if (preset.values) {
             dataService.loadFrom(preset.values)
         }

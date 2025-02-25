@@ -36,7 +36,7 @@ export default setModifierManager(
                                 entry.contentRect.height > 0
                             ) {
                                 this.element.width = entry.contentRect.width
-                                this.element.height = entry.contentRect.height
+                                //    this.element.height = entry.contentRect.height
 
                                 const canvasContainer = this.element
 
@@ -45,14 +45,14 @@ export default setModifierManager(
 
                                 canvasList.forEach(function (canvas) {
                                     canvas.width = entry.contentRect.width
-                                    canvas.height = entry.contentRect.height
+                                    //    canvas.height = entry.contentRect.height
                                 })
 
                                 let component = args.positional[0]
                                 component.drawCanvas(canvasContainer)
 
                                 component.width = entry.contentRect.width
-                                component.height = entry.contentRect.height
+                                //        component.height = entry.contentRect.height
                             }
                         }
                     }
