@@ -6,9 +6,7 @@ import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 
 import formatterFor from './formatters'
-import valueFormatHelper, {
-    availableFormats,
-} from './value_format_helper'
+import valueFormatHelper, { availableFormats } from './value_format_helper'
 import displayFormatHelper, { availableDisplays } from './display_format_helper'
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
@@ -52,11 +50,6 @@ class PushSummaryComponent extends Component {
     }
 
     @cached
-    get dateColumn() {
-        return this.data.dateColumn || 'date'
-    }
-
-    @cached
     get valueColumn() {
         return this._valueColumn || this.args.valueColumn || 'value'
     }
@@ -74,14 +67,13 @@ class PushSummaryComponent extends Component {
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
     }
 
-    @cached
-    get isMultiGrouped() {
+    get isAggregated() {
         if (
             this.latestWindowedTable &&
             this.latestWindowedTable.columnIndex(this.valueColumn) > -1 &&
@@ -102,32 +94,36 @@ class PushSummaryComponent extends Component {
     }
 
     get showBenchmark() {
-        if (this.isMultiGrouped || this.data.windowFilter) {
+        if (this.isAggregated || this.data.windowFilter) {
             return true
         } else {
             return false
         }
     }
 
+    get benchmarkTitle() {
+        return this.args.benchmarkTitle || 'Benchmark'
+    }
+
     @cached
-    get latestTotalTable() {
+    get latestSummarizedTable() {
         try {
             if (this.date == null) {
                 return null
             }
 
-            let totalTable = this.data.summarizedTable
+            let summarizedTable = this.data.summarizedTable
 
-            totalTable = totalTable
+            summarizedTable = summarizedTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
-            return totalTable
+            return summarizedTable
         } catch (error) {
-            console.log('latestFullTable failed: ' + error)
+            console.log('latestSummarizedTable failed: ' + error)
             return null
         }
     }
@@ -144,7 +140,7 @@ class PushSummaryComponent extends Component {
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
@@ -172,7 +168,7 @@ class PushSummaryComponent extends Component {
             trendTable = trendTable
                 .params({
                     dateSet: this.trendDateSet,
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
@@ -197,19 +193,6 @@ class PushSummaryComponent extends Component {
     }
 
     @cached
-    get isAggregated() {
-        if (
-            this.latestWindowedTable &&
-            this.latestWindowedTable.columnIndex(this.valueColumn) > -1 &&
-            this.latestWindowedTable.numRows() > 1
-        ) {
-            return true
-        } else {
-            return false
-        }
-    }
-
-    @cached
     get value() {
         if (
             this.latestWindowedTable &&
@@ -224,10 +207,10 @@ class PushSummaryComponent extends Component {
     @cached
     get median() {
         if (
-            this.latestTotalTable &&
-            this.latestTotalTable.columnIndex(this.valueColumn) > -1
+            this.latestSummarizedTable &&
+            this.latestSummarizedTable.columnIndex(this.valueColumn) > -1
         ) {
-            return agg(this.latestTotalTable, op.median(this.valueColumn))
+            return agg(this.latestSummarizedTable, op.median(this.valueColumn))
         } else {
             return null
         }
@@ -236,11 +219,11 @@ class PushSummaryComponent extends Component {
     @cached
     get q25() {
         if (
-            this.latestTotalTable &&
-            this.latestTotalTable.columnIndex(this.valueColumn) > -1
+            this.latestSummarizedTable &&
+            this.latestSummarizedTable.columnIndex(this.valueColumn) > -1
         ) {
             return agg(
-                this.latestTotalTable,
+                this.latestSummarizedTable,
                 op.quantile(this.valueColumn, 0.25)
             )
         } else {
@@ -251,11 +234,11 @@ class PushSummaryComponent extends Component {
     @cached
     get q75() {
         if (
-            this.latestTotalTable &&
-            this.latestTotalTable.columnIndex(this.valueColumn) > -1
+            this.latestSummarizedTable &&
+            this.latestSummarizedTable.columnIndex(this.valueColumn) > -1
         ) {
             return agg(
-                this.latestTotalTable,
+                this.latestSummarizedTable,
                 op.quantile(this.valueColumn, 0.75)
             )
         } else {
@@ -278,26 +261,22 @@ class PushSummaryComponent extends Component {
             this.trendWindowedTable &&
             this.trendWindowedTable.columnIndex(this.valueColumn) > -1
         ) {
-            console.log(this.data)
-            console.log(this.data.groupColumns)
-
             let dateIndex = this.data.groupColumns.indexOf('date')
 
             let groupColumns = this.data.groupColumns.filter(
                 function (e) {
-                    return e != this.dateColumn
+                    return e != this.data.dateColumn
                 }.bind(this)
             )
 
             let rolledupTable = this.trendWindowedTable
                 .reify()
-                .groupby(groupColumns)
+                .groupby(this.data.dateColumn)
                 .rollup({
-                    mean: op.mean(this.valueColumn),
-                    values: op.count(),
+                    value: op.median(this.valueColumn),
                 })
-                .filter((d) => op.equal(d.values, 3))
-            return agg(rolledupTable, op.median('mean'))
+
+            return agg(rolledupTable, op.mean('value'))
         } else {
             return null
         }
@@ -331,7 +310,6 @@ class PushSummaryComponent extends Component {
         ctx.fillStyle = '#FFFFFF'
         ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-        // Draw background
         ctx.fillStyle = '#F2F2F2'
         ctx.fillRect(
             0,
@@ -406,7 +384,11 @@ class PushSummaryComponent extends Component {
 
         xTicks.forEach((d) => {
             ctx.beginPath()
-            ctx.fillText(formatterFor(this.format)(d), xScale(d), axisY + tickSize)
+            ctx.fillText(
+                formatterFor(this.format)(d),
+                xScale(d),
+                axisY + tickSize
+            )
         })
     }
 
@@ -496,7 +478,7 @@ setComponentTemplate(
 			{{#if this.editMode}}
 			<div class="widget-edit">
 				<div class="widget-edit-title">Bearbeiten</div>
-				<div class="grid grid-cols-2 gap-4">
+				<div class="grid sm:grid-cols-2 gap-4">
 					<div class="field">
 						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
 					</div>

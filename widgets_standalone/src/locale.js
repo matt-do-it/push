@@ -47,10 +47,9 @@ export const germanLocaleSpec = {
         'Nov',
         'Dez',
     ],
-};
+}
 
-let germanLocale = d3.formatLocale(germanLocaleSpec);
-
+let germanLocale = d3.formatLocale(germanLocaleSpec)
 
 export default function currentLocale() {
     return germanLocale

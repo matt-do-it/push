@@ -57,7 +57,6 @@ class AppComponent extends Component {
         this.data.groupColumns = input.split(',')
     }
 
-    // Edit mode
     @action
     updateRollupSpec(input) {
         try {
@@ -96,70 +95,70 @@ setComponentTemplate(
     precompileTemplate(
         `
     	<NavbarComponent/>
-<div class="drawer drawer-open">
-  <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-    	<div class="drawer-content">
-    	<div class="py-8 px-8 container mx-auto">
-    		<div class="text-2xl font-bold">
-    			Summary
-    		</div>
-			<PushSummaryComponent @title="Impressions" />
-    		<div class="text-2xl font-bold mt-8">
-    			Table
-    		</div>
-    		<div class="text-2xl font-bold mt-8">
-    			Debug
-    		</div>
-			<PushDebugComponent/>
-    		<div class="text-2xl font-bold mt-8">
-    			Histogram
-    		</div>
-			 <PushHistogramComponent />
-    		<div class="text-2xl font-bold mt-8">
-    			Partition
-    		</div>
-			 <PushSunburstComponent @colorColumn="color"/>
-    		<div class="text-2xl font-bold mt-8">
-    			Partition
-    		</div>
-			 <PushPartitionComponent @colorColumn="color"/>
-    		<div class="text-2xl font-bold mt-8">
-    			Pack
-    		</div>
-			 <PushPackComponent @colorColumn="color"/>
-    		<div class="text-2xl font-bold mt-8">
-    			Hierarchy
-    		</div>
-			 <PushHierarchyComponent @colorColumn="color"/>
-    		<div class="text-2xl font-bold mt-8">
-    			History
-    		</div>
-			 <PushHistoryComponent @colorColumn="color" @mark="line"/>
-   			<div class="text-2xl font-bold mt-8">
-    			Values
-    		</div>
-			 <PushValuesComponent/>
-   			<div class="text-2xl font-bold mt-8">
-    			Standardabweichung
-    		</div>
-			 <PushDeviationComponent/>
-   			<div class="text-2xl font-bold mt-8">
-    			Scatter
-    		</div>
-			 <PushScatterComponent/>
-			</div>
- 		</div>
-  <div class="drawer-side bg-base-100">
-    <label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label> 
-    <div class="py-2 px-4 bg-base-100">
-    	<PresetComponent/>
-        <InputComponent @title="Filter" @value={{this.filter}} @onInput={{this.updateFilter}}/>
-        <InputComponent @title="Group columns" @value={{this.groupColumnsString}} @onInput={{this.updateGroupColumns}}/>
-      	<TextareaComponent @title="Rollup" @value={{this.rollupSpec}} @onInput={{this.updateRollupSpec}} />
-	    <TextareaComponent @title="Derive" @value={{this.deriveSpec}} @onInput={{this.updateDeriveSpec}}/>
-	  </div>
-  </div>
-</div>
+			<div class="drawer drawer-open">
+  				<input id="my-drawer" type="checkbox" class="drawer-toggle" />
+				<div class="drawer-content">
+				<div class="py-8 px-8 container mx-auto">
+					<div class="text-2xl font-bold">
+						Summary
+					</div>
+					<PushSummaryComponent @title="Impressions" />
+					<div class="text-2xl font-bold mt-8">
+						Table
+					</div>
+					<div class="text-2xl font-bold mt-8">
+						Debug
+					</div>
+					<PushDebugComponent/>
+					<div class="text-2xl font-bold mt-8">
+						Histogram
+					</div>
+					 <PushHistogramComponent />
+					<div class="text-2xl font-bold mt-8">
+						Partition
+					</div>
+					 <PushSunburstComponent @colorColumn="color"/>
+					<div class="text-2xl font-bold mt-8">
+						Partition
+					</div>
+					 <PushPartitionComponent @colorColumn="color"/>
+					<div class="text-2xl font-bold mt-8">
+						Pack
+					</div>
+					 <PushPackComponent @colorColumn="color"/>
+					<div class="text-2xl font-bold mt-8">
+						Hierarchy
+					</div>
+					 <PushHierarchyComponent @colorColumn="color"/>
+					<div class="text-2xl font-bold mt-8">
+						History
+					</div>
+					 <PushHistoryComponent @colorColumn="color" @mark="line"/>
+					<div class="text-2xl font-bold mt-8">
+						Values
+					</div>
+					 <PushValuesComponent/>
+					<div class="text-2xl font-bold mt-8">
+						Standardabweichung
+					</div>
+					 <PushDeviationComponent/>
+					<div class="text-2xl font-bold mt-8">
+						Scatter
+					</div>
+					 <PushScatterComponent/>
+					</div>
+				</div>
+						  <div class="drawer-side bg-base-100">
+							<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label> 
+							<div class="py-2 px-4 bg-base-100">
+								<PresetComponent/>
+								<InputComponent @title="Filter" @value={{this.filter}} @onInput={{this.updateFilter}}/>
+								<InputComponent @title="Group columns" @value={{this.groupColumnsString}} @onInput={{this.updateGroupColumns}}/>
+								<TextareaComponent @title="Rollup" @value={{this.rollupSpec}} @onInput={{this.updateRollupSpec}} />
+								<TextareaComponent @title="Derive" @value={{this.deriveSpec}} @onInput={{this.updateDeriveSpec}}/>
+							  </div>
+						  </div>
+						</div>
     `,
         {
             strictMode: true,
