@@ -18,10 +18,16 @@ const meta = {
         let dataService = new DataService()
 
         let presetService = new PresetService()
-        presetService.load(dataService, 'default')
+        presetService.load(dataService, args.presetName)
 
-        dataService.groupColumns = ['date']
-        dataService.rollup = { value: 'op.sum(d.value)' }
+        dataService.filter = args.filter
+
+        dataService.dateColumn = args.dateColumn
+        dataService.groupColumns = args.groupColumns
+
+        dataService.rollup = args.rollup
+
+        dataService.windowFilter = args.windowFilter
 
         let element = document.createElement('div')
         renderComponent(PushSummaryComponent, {
@@ -29,22 +35,40 @@ const meta = {
             args: args,
             services: {
                 data: dataService,
-                dateCalc: new DateCalcService(),
             },
         })
         return element
     },
     argTypes: {
         title: { control: 'text', table: { category: 'Widget options' } },
-        dateColumn: { control: 'text', table: { category: 'Widget options' } },
         valueColumn: { control: 'text', table: { category: 'Widget options' } },
         display: {
             control: 'select',
             table: { category: 'Widget options' },
-            table: { category: 'Widget options' },
             options: ['isoweek', 'isoquarter', 'isoyear'],
         },
-        windowFilter: { control: 'text', table: { category: 'Data options' } },
+        format: {
+            control: 'select',
+            table: { category: 'Widget options' },
+            options: ['number'],
+        },
+        dateColumn: { control: 'text', table: { category: 'Data options' } },
+        presetName: {
+            control: 'select',
+            table: { category: 'Data options' },
+            options: ['default'],
+        },
+        filter: { control: 'object', table: { category: 'Data options' } },
+        groupColumns: {
+            control: 'object',
+            table: { category: 'Data options' },
+        },
+        rollup: { control: 'object', table: { category: 'Data options' } },
+        derive: { control: 'object', table: { category: 'Data options' } },
+        windowFilter: {
+            control: 'object',
+            table: { category: 'Data options' },
+        },
     },
     parameters: {
         docs: {
@@ -63,6 +87,13 @@ export const Default: Story = {
         title: 'Title',
         dateColumn: 'date',
         valueColumn: 'value',
-        display: 'isoweek',
+        display: 'isoquarter',
+        format: 'number',
+        filter: null,
+        groupColumns: ['date'],
+        rollup: { value: 'op.sum(d.value)' },
+        derive: {},
+        windowFilter: null,
+        presetName: 'default',
     },
 }

@@ -5,15 +5,20 @@ import { table, agg, op } from 'arquero'
 import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 
-import valueFormatHelper, { numberFormatter } from './value_format_helper'
-import displayFormatHelper from './display_format_helper'
+import valueFormatHelper, {
+    numberFormatter,
+    availableFormats,
+} from './value_format_helper'
+import displayFormatHelper, { availableDisplays } from './display_format_helper'
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
 import trendFormatHelper from './trend_format_helper'
 import dateFormatHelper from './date_format_helper'
 
 import InputComponent from './input_component'
-import TextareaComponent from './text_area'
+import SelectComponent from './select_component'
+
+import { previousDate } from './date_calc_util'
 
 import {
     precompileTemplate,
@@ -25,30 +30,45 @@ import {
 import * as d3 from 'd3'
 
 class PushSummaryComponent extends Component {
-    @service data
-    @service dateCalc
-
-    @tracked _dateColumn
+    @tracked _title
     @tracked _valueColumn
+    @tracked _format
+    @tracked _display
 
-    @tracked editMode
+    @tracked editMode = false
+
+    get data() {
+        let applicationInstance = getOwner(this)
+
+        return applicationInstance.services[this.args.service || 'data']
+    }
 
     get title() {
         if (this.isAggregated) {
-            return this.args.title + ' - Median'
+            return (this._title || this.args.title) + ' - Median'
         } else {
-            return this.args.title
+            return this._title || this.args.title
         }
     }
 
     @cached
     get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
+        return this.data.dateColumn || 'date'
     }
 
     @cached
     get valueColumn() {
         return this._valueColumn || this.args.valueColumn || 'value'
+    }
+
+    @cached
+    get format() {
+        return this._format || this.args.format || 'number'
+    }
+
+    @cached
+    get display() {
+        return this._display || this.args.display || 'isoweek'
     }
 
     @cached
@@ -58,26 +78,6 @@ class PushSummaryComponent extends Component {
         } catch (error) {
             return null
         }
-    }
-
-    @cached
-    get format() {
-        return this.args.format || 'number'
-    }
-
-    @cached
-    get display() {
-        return this.args.display || 'isoquarter'
-    }
-
-    @cached
-    get windowFilter() {
-        return this.args.windowFilter
-    }
-
-    @cached
-    get windowFilterParams() {
-        return this.args.windowFilterParams
     }
 
     @cached
@@ -148,10 +148,10 @@ class PushSummaryComponent extends Component {
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
-            if (this.windowFilter) {
+            if (this.data.windowFilter) {
                 totalTable = totalTable
-                    .params(this.windowFilterParams)
-                    .filter(this.windowFilter)
+                    .params(this.data.windowFilterParams)
+                    .filter(this.data.windowFilter)
             }
             return totalTable
         } catch (error) {
@@ -176,10 +176,10 @@ class PushSummaryComponent extends Component {
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
-            if (this.windowFilter) {
+            if (this.data.windowFilter) {
                 trendTable = trendTable
-                    .params(this.windowFilterParams)
-                    .filter(this.windowFilter)
+                    .params(this.data.windowFilterParams)
+                    .filter(this.data.windowFilter)
             }
             return trendTable
         } catch (error) {
@@ -191,8 +191,8 @@ class PushSummaryComponent extends Component {
     get trendDateSet() {
         return [
             this.date,
-            this.dateCalc.previousDate(this.date, this.display, 1),
-            this.dateCalc.previousDate(this.date, this.display, 2),
+            previousDate(this.date, this.display, 1),
+            previousDate(this.date, this.display, 2),
         ]
     }
 
@@ -278,6 +278,9 @@ class PushSummaryComponent extends Component {
             this.trendWindowedTable &&
             this.trendWindowedTable.columnIndex(this.valueColumn) > -1
         ) {
+            console.log(this.data)
+            console.log(this.data.groupColumns)
+
             let dateIndex = this.data.groupColumns.indexOf('date')
 
             let groupColumns = this.data.groupColumns.filter(
@@ -303,17 +306,20 @@ class PushSummaryComponent extends Component {
     @action
     drawCanvas(canvas) {
         const ctx = canvas.getContext('2d')
+        ctx.reset()
+
+        let scale = 2
 
         let canvasWidth = canvas.width
         let canvasHeight = canvas.height
 
         let offsetValue = {
-            top: 6,
-            bottom: 26,
+            top: 6 * scale,
+            bottom: 26 * scale,
         }
         let offsetBenchmark = {
-            top: 0,
-            bottom: 20,
+            top: 0 * scale,
+            bottom: 20 * scale,
         }
 
         let maxValue =
@@ -349,7 +355,7 @@ class PushSummaryComponent extends Component {
             ctx.fillRect(
                 xScale(this.median) - 2,
                 offsetBenchmark.top,
-                4,
+                4 * scale,
                 canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top
             )
         }
@@ -368,15 +374,15 @@ class PushSummaryComponent extends Component {
             ctx.fillRect(
                 xScale(this.comparison) - 2,
                 offsetBenchmark.top,
-                4,
+                4 * scale,
                 canvasHeight - offsetBenchmark.bottom - offsetBenchmark.top
             )
         }
         // Draw axis
-        let axisY = canvas.height - offsetBenchmark.bottom
+        let axisY = canvasHeight - offsetBenchmark.bottom
 
-        let xTicks = xScale.ticks()
-        let tickSize = 6
+        let xTicks = xScale.ticks(Math.round(canvasWidth / 200))
+        let tickSize = 6 * scale
 
         ctx.strokeStyle = '#1f2937'
         ctx.beginPath()
@@ -396,18 +402,32 @@ class PushSummaryComponent extends Component {
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
         ctx.fillStyle = 'black'
+        ctx.font = 12 * scale + 'px sans-serif'
+
         xTicks.forEach((d) => {
             ctx.beginPath()
             ctx.fillText(numberFormatter(d), xScale(d), axisY + tickSize)
         })
     }
 
+    get availableFormats() {
+        return availableFormats
+    }
+
+    get availableDisplays() {
+        return availableDisplays
+    }
+
+    get availableNumberColumns() {
+        return this.data.numberColumns
+    }
+
     @action
-    updateDateColumn(input) {
+    updateTitle(input) {
         try {
-            this._dateColumn = input
+            this._title = input
         } catch (error) {
-            this._dateColumn = null
+            this._title = null
         }
     }
 
@@ -417,6 +437,24 @@ class PushSummaryComponent extends Component {
             this._valueColumn = input
         } catch (error) {
             this._valueColumn = null
+        }
+    }
+
+    @action
+    updateDisplay(input) {
+        try {
+            this._display = input
+        } catch (error) {
+            this._display = null
+        }
+    }
+
+    @action
+    updateFormat(input) {
+        try {
+            this._format = input
+        } catch (error) {
+            this._format = null
         }
     }
 
@@ -436,8 +474,8 @@ setComponentTemplate(
 				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
 				<div class="widget-title">{{this.title}}</div>
 				<div class="widget-value">{{valueFormatHelper this.value this.format}}</div>
-				<div class="widget-canvas">
-					<canvas width="300" height="40" {{canvasModifier this}}></canvas>
+				<div class="widget-canvas" style="height: 40px">
+					<canvas {{canvasModifier this}}></canvas>
 				</div>	
 				<div class="widget-benchmark">
 						Q25: {{valueFormatHelper this.q25 this.format}}
@@ -447,27 +485,33 @@ setComponentTemplate(
 						Q75: {{valueFormatHelper this.q75 this.format}}
 				</div>
 				<div class="widget-trend">
-					<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}} </div>
+					<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}}</div>
 					<div class="right {{trendColorHelper this.trend}}">{{trendFormatHelper this.trend}}</div>
 				</div>
 				<div class="widget-toggle">
-					<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
 				</div>
 			</div>
 			{{/unless}}
 			{{#if this.editMode}}
 			<div class="widget-edit">
 				<div class="widget-edit-title">Bearbeiten</div>
-				<div class="grid grid-cols-3 gap-4">
+				<div class="grid grid-cols-2 gap-4">
 					<div class="field">
-						<InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
 					</div>
 					<div class="field">
-						<InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
+						<SelectComponent @title="Value column" @value={{this.valueColumn}} @options={{this.availableNumberColumns}} @onInput={{this.updateValueColumn}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Format" @value={{this.format}} @options={{this.availableFormats}} @onInput={{this.updateFormat}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Display" @value={{this.display}} @options={{this.availableDisplays}} @onInput={{this.updateDisplay}}/>
 					</div>
 				</div>
 				<div class="widget-toggle">
-					<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
 				</div>
 			</div>
 			{{/if}}
@@ -487,6 +531,7 @@ setComponentTemplate(
                 dateFormatHelper,
 
                 InputComponent,
+                SelectComponent,
             },
         }
     ),

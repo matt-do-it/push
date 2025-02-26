@@ -8,7 +8,6 @@
         "@babel/plugin-proposal-decorators": "^7.24.6",
         "@babel/preset-env": "^7.24.6",
         "@babel/preset-typescript": "^7.24.6",
-        "@chromatic-com/storybook": "^3.2.4",
         "@glimmer/interfaces": "^0.92.0",
         "@glimmerx/babel-preset": "^0.6.8",
         "@glimmerx/helper": "^0.6.8",

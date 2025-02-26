@@ -6,6 +6,8 @@ import currentLocale from './locale'
 export const numberFormatter = currentLocale().format(',.1f')
 export const rateFormatter = currentLocale().format('.2%')
 
+export const availableFormats = ['rate', 'number']
+
 export const multiFormatter = function (value, format) {
     if (value == null) {
         return 'NA'

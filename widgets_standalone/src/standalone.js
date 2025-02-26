@@ -1,7 +1,7 @@
 import { renderComponent } from '@glimmerx/core'
 
 import DataService from './data_service'
-import DateCalcService from './date_service'
+import PresetService from './preset_service'
 
 import PushSummaryComponent from './push_summary'
 import PushTableComponent from './push_table'
@@ -26,7 +26,6 @@ function embed(component, dataService, args) {
         args: args,
         services: {
             data: dataService,
-            dateCalc: new DateCalcService(),
         },
     })
     return element
@@ -34,5 +33,6 @@ function embed(component, dataService, args) {
 
 export { PushSummaryComponent, PushTableComponent }
 export { DataService }
+export { PresetService }
 
 export { pushEmbed, embed }

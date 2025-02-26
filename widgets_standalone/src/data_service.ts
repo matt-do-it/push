@@ -12,6 +12,8 @@ export default class DataService {
 
     @tracked groupColumns
 
+    @tracked dateColumn
+
     @tracked rollup
     @tracked derive
 
@@ -142,7 +144,7 @@ export default class DataService {
         return binnnableStringColumns
     }
 
-    getNumberColumns(): string[] {
+    get numberColumns(): string[] {
         const colNames = this.summarizedTable.columnNames()
         const numberColumns: string[] = []
         for (const colName of colNames) {
