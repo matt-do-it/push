@@ -17,6 +17,9 @@ import tableTrendHelper from './table_trend_helper'
 import tableComparisonHelper from './table_comparison_helper'
 import tableSortColumnHelper from './table_sort_column_helper'
 
+import InputComponent from './input_component'
+import SelectComponent from './select_component'
+
 import {
     precompileTemplate,
     setComponentTemplate,
@@ -25,9 +28,6 @@ import {
 } from '@glimmer/core'
 
 class PushTableComponent extends Component {
-    @service dateCalc
-    @service formatter
-
     @tracked currentPage = 1
 
     @tracked offset = 0
@@ -37,6 +37,11 @@ class PushTableComponent extends Component {
     @tracked sortColumn = null
     @tracked sortAscending = false
 
+    @tracked editMode = false
+
+    @tracked _title
+
+	
     get data() {
         if (this.args.service) {
             return getOwner(this).services[this.args.service]
@@ -47,7 +52,7 @@ class PushTableComponent extends Component {
 
     constructor(owner, args) {
         super(owner, args)
-        
+
         if (this.args.offset) {
             this.offset = parseInt(this.args.offset)
         }
@@ -56,27 +61,36 @@ class PushTableComponent extends Component {
             this.limit = parseInt(this.args.limit)
         }
 
-		if (this.args.sortColumn) {
-			this.sortColumn = this.args.sortColumn; 
-		} else {
-			if (this.args.columns && this.args.columns.length > 1) {
-				this.sortColumn = this.args.columns[1].valuePath
-			}
-		}
+        if (this.args.sortColumn) {
+            this.sortColumn = this.args.sortColumn
+        } else {
+            if (this.args.columns && this.args.columns.length > 1) {
+                this.sortColumn = this.args.columns[1].valuePath
+            }
+        }
     }
 
     get title() {
-        return this.args.title
+        return this._title || this.args.title
     }
 
-    get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
-    }
+	get columns() {
+		if (this.args.columns) {
+			return this.args.columns
+		} else {
+			return this.data.summarizedTable.columnNames.map(function(c) {
+				return {
+					title: c
+				}
+			})
+		}
+	}
+
 
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
@@ -97,7 +111,7 @@ class PushTableComponent extends Component {
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
@@ -122,7 +136,7 @@ class PushTableComponent extends Component {
 
         var allNullExpr =
             'd => (' +
-            this.args.columns
+            this.columns
                 .filter(function (c) {
                     return !c.isSimpleValue
                 })
@@ -137,7 +151,7 @@ class PushTableComponent extends Component {
         if (this.search) {
             var searchExpr =
                 'd => (' +
-                this.args.columns
+                this.columns
                     .filter(function (c) {
                         return c.isSimpleValue
                     })
@@ -170,11 +184,8 @@ class PushTableComponent extends Component {
     }
 
     get values() {
-    console.log(this.latestSummarizedTableNonNull.reify());
         let startIndex = this.offset
         let endIndex = this.offset + this.limit - 1
-console.log(startIndex);
-console.log(endIndex);
         if (this.latestSummarizedTableNonNull) {
             return this.latestSummarizedTableNonNull
                 .slice(startIndex, endIndex)
@@ -194,10 +205,11 @@ console.log(endIndex);
     }
 
     get columns() {
+    	
         if (this.args.columns) {
             return this.args.columns
         } else {
-            let allColumns = this.latestSummarizedTableNonNull.columnNames()
+            let allColumns = this.data.summarizedTable.columnNames()
 
             let columnsMapped = allColumns.map(function (c) {
                 return {
@@ -327,71 +339,103 @@ console.log(endIndex);
     @action updateOffset(value) {
         this.offset = parseInt(value)
     }
+    
+    @action
+    updateTitle(input) {
+        try {
+            this._title = input
+        } catch (error) {
+            this._title = null
+        }
+    }
+
+    @action
+    toggleEditMode() {
+        this.editMode = !this.editMode
+    }
 }
 
 setComponentTemplate(
     precompileTemplate(
         `
         <div class="push widget">
+			{{#unless this.editMode}}
         	<div class="widget-view">
   				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
   				<div class="widget-title">{{this.title}}</div>
-      <table class="table table-fixed border border-solid border-slate-100 rounded-md flex-grow">
-        <thead>
-          <tr>
-            {{#each this.columns as |column|}}
-              <th>
-                
-                  {{column.name}}
-                  
+				  <table class="table table-fixed border border-solid border-slate-100 rounded-md flex-grow">
+					<thead>
+					  <tr>
+						{{#each this.columns as |column|}}
+						  <th>
+				
+							  {{column.name}}
+				  
 
-              </th>
-            {{/each}}
-          </tr>
-        </thead>
-        <tbody>
-          {{#each this.values as |row|}}
-            <tr>
-              {{#each this.columns as |column|}}
-                <td>
-                  {{#if column.format}}
-                    <div class="md:flex md:flex-col justify-between">
-                      <div class="{{if this.isNA 'text-base-300' ''}}">
-                        {{valueFormatHelper
-                          (tableValueHelper row column)
-                          column.format
-                        }}
-                      </div>
-                      {{#if (trendAvailableHelper row column)}}
-                        <div class="flex-row">
-                          <div
-                            class="text-xs
-                              {{if this.trendIsUp 'text-success' 'text-error'}}"
-                          >
-                            {{trendFormatHelper (tableTrendHelper row column)}}
-                          </div>
-                          <div class="text-base text-xs">
-                            Ø drei
-                            {{displayFormatHelper this.display}}:
-                            {{valueFormatHelper
-                              (tableComparisonHelper row column)
-                              column.format
-                            }}
-                          </div>
-                        </div>
-                      {{/if}}
-                    </div>
+						  </th>
+						{{/each}}
+					  </tr>
+					</thead>
+					<tbody>
+					  {{#each this.values as |row|}}
+						<tr>
+						  {{#each this.columns as |column|}}
+							<td>
+							  {{#if column.format}}
+								<div class="md:flex md:flex-col justify-between">
+								  <div class="{{if this.isNA 'text-base-300' ''}}">
+									{{valueFormatHelper
+									  (tableValueHelper row column)
+									  column.format
+									}}
+								  </div>
+								  {{#if (trendAvailableHelper row column)}}
+									<div class="flex-row">
+									  <div
+										class="text-xs
+										  {{trendColorHelper (tableTrendHelper row column)}}"
+									  >
+										{{trendFormatHelper (tableTrendHelper row column)}}
+									  </div>
+									  <div class="text-base text-xs">
+										Ø drei
+										{{displayFormatHelper this.display}}:
+										{{valueFormatHelper
+										  (tableComparisonHelper row column)
+										  column.format
+										}}
+									  </div>
+									</div>
+								  {{/if}}
+								</div>
 
-                  {{else}}
-                    {{tableValueHelper row column}}
-                  {{/if}}
-                </td>
-              {{/each}}
-            </tr>
-          {{/each}}
-        </tbody>
-      </table>
+							  {{else}}
+								{{tableValueHelper row column}}
+							  {{/if}}
+							</td>
+						  {{/each}}
+						</tr>
+					  {{/each}}
+					</tbody>
+				  </table>
+				  <div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
+				</div>
         	</div>
+			{{/unless}}
+			{{#if this.editMode}}
+			<div class="widget-edit">
+				<div class="widget-edit-title">Bearbeiten</div>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div class="field">
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
+					</div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
+				</div>
+			</div>
+			{{/if}}
 		</div>   `,
         {
             strictMode: true,
@@ -410,6 +454,9 @@ setComponentTemplate(
                 tableTrendHelper,
                 tableSortColumnHelper,
                 trendAvailableHelper,
+
+                InputComponent,
+                SelectComponent,
             },
         }
     ),

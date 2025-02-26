@@ -51,11 +51,6 @@ class PushHierarchyComponent extends Component {
     }
 
     @cached
-    get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
-    }
-
-    @cached
     get valueColumn() {
         return this._valueColumn || this.args.valueColumn || 'value'
     }
@@ -63,7 +58,7 @@ class PushHierarchyComponent extends Component {
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
@@ -100,7 +95,7 @@ class PushHierarchyComponent extends Component {
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
             return totalTable
@@ -129,7 +124,7 @@ class PushHierarchyComponent extends Component {
     get groupColumns() {
         let g = [...this.data.groupColumns]
 
-        let dateIndex = g.indexOf(this.dateColumn)
+        let dateIndex = g.indexOf(this.data.dateColumn)
         if (dateIndex > -1) {
             g.splice(dateIndex, 1)
         }
@@ -298,13 +293,12 @@ class PushHierarchyComponent extends Component {
         )
 
         let keys = [...this.groupColumns]
-        const dateIndex = keys.indexOf(this.dateColumn)
+        const dateIndex = keys.indexOf(this.data.dateColumn)
         if (dateIndex > -1) {
             keys.splice(dateIndex, 1)
         }
 
         let childs = d3.group(values, ...keys.map((k) => (d) => d[k]))
-
         let data = { name: 'Root', children: this.mapToObject(childs, 0) }
         return data
     }
@@ -366,7 +360,7 @@ class PushHierarchyComponent extends Component {
             relevantNodes = relevantNodes.concat(others)
         })
 
-        return relevantNodes.map(
+        let mappedNodes = relevantNodes.map(
             function (d) {
                 let animated = {
                     x: this.xMap(d.x0),
@@ -396,6 +390,10 @@ class PushHierarchyComponent extends Component {
                 return animated
             }.bind(this)
         )
+        
+        console.log(mappedNodes);
+        
+        return mappedNodes
     }
 
     @cached
@@ -558,7 +556,7 @@ setComponentTemplate(
 				{{/each}}
 			</div>
 			<div class="widget-canvas aspect-video">
-				<div class="canvas-container" style="position: relative; width: 100%; height: 100%" {{canvasModifier this}}>
+				<div class="canvas-container" style="position: relative; width: 100%; height: 500px" {{canvasModifier this}}>
 					<canvas class="canvas" class="cursor-pointer" {{on "click" this.mouseClick}}></canvas>
 					<div class="data"></div>
 				</div>
@@ -573,7 +571,7 @@ setComponentTemplate(
     		<div class="widget-edit-title">Bearbeiten</div>
     		<div class="grid grid-cols-3 gap-4">
     			<div class="field">
-    			    <InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
+    			    <InputComponent @title="Date column" @value={{this.data.dateColumn}} @onInput={{this.updateDateColumn}}/>
 				</div>
     			<div class="field">
     			    <InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>

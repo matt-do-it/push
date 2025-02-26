@@ -99,7 +99,7 @@ class PushHistoryComponent extends Component {
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.args.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
@@ -172,7 +172,7 @@ class PushHistoryComponent extends Component {
     get groupColumns() {
         return this.data.groupColumns.filter(
             function (c) {
-                if (c == this.args.dateColumn || c == this.colorColumn) {
+                if (c == this.data.dateColumn || c == this.colorColumn) {
                     return false
                 } else {
                     return true
@@ -285,7 +285,7 @@ class PushHistoryComponent extends Component {
         })
         this.data.groupColumns.forEach(
             function (e) {
-                if (e != this.colorColumn && e != this.args.dateColumn) {
+                if (e != this.colorColumn && e != this.data.dateColumn) {
                     tooltips.push({
                         field: e.replace(/\./, '\\.'),
                     })

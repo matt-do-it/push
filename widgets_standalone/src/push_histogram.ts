@@ -9,13 +9,14 @@ import { compile } from 'vega-lite'
 import vegaConfig from './vega_config'
 import vegaModifier from './vega_modifier'
 
-import { formatFor } from './formats';
+import { formatFor } from './formats'
 
 import dateFormatHelper from './date_format_helper'
-import valueFormatHelper from './value_format_helper'
+import valueFormatHelper, { availableFormats } from './value_format_helper'
+import displayFormatHelper, { availableDisplays } from './display_format_helper'
 
 import InputComponent from './input_component'
-import TextareaComponent from './text_area'
+import SelectComponent from './select_component'
 
 import {
     precompileTemplate,
@@ -29,25 +30,25 @@ const formatDisplay = helper(([name], { greeting }) => {
 })
 
 class PushHistogramComponent extends Component {
-    @service data
+    @tracked _title
+    @tracked _format
+    @tracked _display
 
-    @service dateCalc
+    @tracked editMode = false
 
-    get title() {
-        if (this.isMultiGrouped) {
-            return this.args.title + ' - Median'
-        } else {
-            return this.args.title
-        }
+    get data() {
+        let applicationInstance = getOwner(this)
+
+        return applicationInstance.services[this.args.service || 'data']
     }
 
-    get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
+    get title() {
+		return this._title || this.args.title
     }
 
     get binColumns() {
         if (this.args.binColumns) {
-            return this.args.binColumns.split(',')
+            return this.args.binColumns;
         }
 
         let numberColumns = this.data.numberColumns
@@ -88,18 +89,20 @@ class PushHistogramComponent extends Component {
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
     }
 
-    get display() {
-        return this.args.display || 'isoweek'
+    @cached
+    get format() {
+        return this._format || this.args.format || 'number'
     }
 
-    get format() {
-        return this.args.format || 'number'
+    @cached
+    get display() {
+        return this._display || this.args.display || 'isoweek'
     }
 
     @cached
@@ -114,7 +117,7 @@ class PushHistogramComponent extends Component {
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
@@ -145,6 +148,7 @@ class PushHistogramComponent extends Component {
             data: { values: this.values },
             mark: { type: 'bar', tooltip: true },
             width: 'container',
+            height: 'container',
             encoding: {
                 x: {
                     field: column,
@@ -157,38 +161,107 @@ class PushHistogramComponent extends Component {
             },
         }
 
-        const vegaSpec = compile(liteSpec).spec
+        const vegaSpec = compile(liteSpec, {
+            config: vegaConfig(),
+        }).spec
+        
         return vegaSpec
     }
+
+    get availableFormats() {
+        return availableFormats
+    }
+
+    get availableDisplays() {
+        return availableDisplays
+    }
+
+    @action
+    updateTitle(input) {
+        try {
+            this._title = input
+        } catch (error) {
+            this._title = null
+        }
+    }
+
+    @action
+    updateDisplay(input) {
+        try {
+            this._display = input
+        } catch (error) {
+            this._display = null
+        }
+    }
+
+    @action
+    updateFormat(input) {
+        try {
+            this._format = input
+        } catch (error) {
+            this._format = null
+        }
+    }
+
+    @action
+    toggleEditMode() {
+        this.editMode = !this.editMode
+    }
+
 }
 
 setComponentTemplate(
     precompileTemplate(
         `
       <div class="push widget">
-		{{#each this.binColumnsFormatted as |column|}}
+		  {{#unless this.editMode}}
 		  <div class="widget-view">
-			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-			<div class="widget-title">{{this.title}}</div>
-			<div class="widget-canvas">
-			  <div
-				style="width: 100%"
-				{{vegaModifier column.spec}}
-			  >
-			  </div>
+				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
+				<div class="widget-title">{{this.title}}</div>
+				<div class="widget-canvas-grid flex flex-row justify-stretch">
+					{{#each this.binColumnsFormatted as |column|}}
+						<div class="flex flex-col flex-auto w-10 overflow-hidden">
+							<div class="widget-canvas aspect-video w-full">
+								<div style="width: 100%; height: 100%"
+									{{vegaModifier column.spec}}>
+								</div>
+							</div>
+							<div class="widget-additional text-xs">
+								{{column.title}}: Q25:
+									{{valueFormatHelper column.q25 this.format}}
+									- M:
+									{{valueFormatHelper column.median this.format}}
+									- Q75:
+									{{valueFormatHelper column.q75 this.format}}
+							</div>
+						</div>
+					{{/each}}
+				</div>
+				<div class="widget-help">{{@help}}</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
+				</div>
 			</div>
-			<div class="widget-help">{{@help}}</div>
-			<div class="widget-additional">
-			  {{column.title}}: Q25:
-			  {{valueFormatHelper column.q25 this.format}}
-			  - M:
-			  {{valueFormatHelper column.median this.format}}
-			  - Q75:
-			  {{valueFormatHelper column.q75 this.format}}
+			{{/unless}}
+			{{#if this.editMode}}
+			<div class="widget-edit">
+				<div class="widget-edit-title">Bearbeiten</div>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div class="field">
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Format" @value={{this.format}} @options={{this.availableFormats}} @onInput={{this.updateFormat}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Display" @value={{this.display}} @options={{this.availableDisplays}} @onInput={{this.updateDisplay}}/>
+					</div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
+				</div>
 			</div>
-
-		  </div>
-		{{/each}}
+			{{/if}}
   	</div>
     `,
         {
@@ -199,8 +272,9 @@ setComponentTemplate(
                 dateFormatHelper,
                 valueFormatHelper,
                 vegaModifier,
+
                 InputComponent,
-                TextareaComponent,
+                SelectComponent,
             },
         }
     ),

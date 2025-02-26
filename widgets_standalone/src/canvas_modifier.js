@@ -48,6 +48,8 @@ export default setModifierManager(
                                 canvas.height = entry.contentRect.height * 2
 
                                 let component = args.positional[0]
+                                component.width = entry.contentRect.width * 2
+                                component.height = entry.contentRect.height * 2
                                 component.drawCanvas(canvas)
                             }
                         }
