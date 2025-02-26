@@ -20,7 +20,18 @@ import {
 
 import * as d3 from 'd3'
 
-class InputComponent extends Component {
+class SelectComponent extends Component {
+    get options() {
+        return this.args.options.map(
+            function (e) {
+                return {
+                    title: e,
+                    selected: e == this.args.value,
+                }
+            }.bind(this)
+        )
+    }
+
     @action update(event) {
         if (this.args.onInput) {
             this.args.onInput(event.target.value)
@@ -35,8 +46,19 @@ setComponentTemplate(
   <div class="label">
     <span class="label-text">{{@title}}</span>
   </div>
-  <input type="text" value={{@value}} autocomplete='off' spellcheck='false' autocorrect='off' placeholder="" class="input input-bordered w-full max-w-xs" {{on "input" this.update}}/>
-</label>`,
+  <select class="select select-bordered"  {{on "input" this.update}}>
+    <option disabled>Please select</option>
+    {{#each this.options as |o|}}
+    	{{#if o.selected}}
+	    	<option selected="selected">{{o.title}}</option>
+	    {{else}}
+	    	<option>{{o.title}}</option>
+	    
+	    {{/if}}
+    {{/each}}
+  </select>
+</label>
+`,
         {
             strictMode: true,
             scope: {
@@ -51,7 +73,7 @@ setComponentTemplate(
             },
         }
     ),
-    InputComponent
+    SelectComponent
 )
 
-export default InputComponent
+export default SelectComponent

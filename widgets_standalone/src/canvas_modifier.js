@@ -29,30 +29,26 @@ export default setModifierManager(
         install(args) {
             this.resizeObserver = new ResizeObserver(
                 function (entries) {
+                    console.log('triggerd')
                     for (const entry of entries) {
+                        console.log('triggerd elm')
                         if (entry.contentRect) {
                             if (
                                 entry.contentRect.width > 0 &&
                                 entry.contentRect.height > 0
                             ) {
-                                this.element.width = entry.contentRect.width
-                                this.element.height = entry.contentRect.height
+                                const canvas = this.element
 
-                                const canvasContainer = this.element
+                                canvas.style.width =
+                                    entry.contentRect.width + 'px'
+                                canvas.style.height =
+                                    entry.contentRect.height + 'px'
 
-                                const canvasList =
-                                    canvasContainer.querySelectorAll('canvas')
-
-                                canvasList.forEach(function (canvas) {
-                                    canvas.width = entry.contentRect.width
-                                    canvas.height = entry.contentRect.height
-                                })
+                                canvas.width = entry.contentRect.width * 2
+                                canvas.height = entry.contentRect.height * 2
 
                                 let component = args.positional[0]
-                                component.drawCanvas(canvasContainer)
-
-                                component.width = entry.contentRect.width
-                                component.height = entry.contentRect.height
+                                component.drawCanvas(canvas)
                             }
                         }
                     }
@@ -68,13 +64,13 @@ export default setModifierManager(
         }
 
         modify(args) {
-            const canvas = this.element
+            const canvas = this.element.parentElement
             let component = args.positional[0]
             component.drawCanvas(canvas)
         }
 
         destroy(args) {
-            this.resizeObserver.unobserve(this.element)
+            this.resizeObserver.unobserve(this.element.parentElement)
         }
     }
 )

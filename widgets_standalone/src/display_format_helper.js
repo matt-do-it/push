@@ -1,5 +1,7 @@
 import { helper } from '@glimmerx/helper'
 
+export const availableDisplays = ['isoweek', 'isoquarter', 'isoyear']
+
 export default helper(([display, format]) => {
     if (display == 'isoweek') {
         return 'Wochen'

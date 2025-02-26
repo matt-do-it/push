@@ -25,12 +25,8 @@
     @apply table;
 }
 
-.widget-title {
-    @apply font-bold;
-}
-
-.widget-canvas {
-    @apply px-4 py-4 grow flex aspect-video;
+.widget .widget-canvas {
+    @apply my-2 grow flex;
 }
 
 .widget .widget-benchmark {

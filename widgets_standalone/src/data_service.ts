@@ -12,6 +12,8 @@ export default class DataService {
 
     @tracked groupColumns
 
+    @tracked dateColumn
+
     @tracked rollup
     @tracked derive
 
