@@ -58,3 +58,19 @@
 .widget-edit {
     @apply pb-2;
 }
+
+.widget .label-text {
+    @apply text-sm;
+}
+
+.widget .select {
+    @apply text-sm;
+}
+
+.widget .input {
+    @apply text-sm;
+}
+
+.widget .btn-xs {
+    @apply text-[12px];
+}

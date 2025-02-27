@@ -35,6 +35,9 @@ module.exports = [
             filename: '[name].js',
             path: path.resolve(__dirname, 'dist'),
         },
+        performance: {
+            hints: false,
+        },
 
         module: {
             rules: [
@@ -71,9 +74,17 @@ module.exports = [
         entry: {
             standalone: './src/standalone.js',
         },
+        optimization: {
+            usedExports: true,
+            minimize: process.env.NODE_ENV === 'production',
+        },
+        performance: {
+            hints: false,
+        },
         experiments: {
             outputModule: true,
         },
+        devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
         devServer: {
             headers: {
                 'Access-Control-Allow-Origin': '*',

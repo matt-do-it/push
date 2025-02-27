@@ -3,14 +3,17 @@
 <html>
     <head>
         <title><%= htmlWebpackPlugin.options.title %></title>
+    </head>
+    <body>
+        <div id="push-embed"></div>
         <script type="module">
             import {
                 DataService,
                 PresetService,
                 PushSummaryComponent,
-                PushHistoryComponent,
+                PushTableComponent,
                 embed,
-            } from './standalone.js'
+            } from 'https://www.matt-herold.de/ml-push/standalone.js'
 
             document.addEventListener('DOMContentLoaded', (event) => {
                 let dataService = new DataService()
@@ -21,25 +24,13 @@
                 dataService.groupColumns = ['date']
                 dataService.rollup = { value: 'op.sum(d.value)' }
 
-                let totals = embed(PushHistoryComponent, dataService, {
+                let totals = embed(PushSummaryComponent, dataService, {
                     title: 'Zusammenfassung',
                     benchmarkTitle: 'Groups',
                 })
 
-                document.getElementById('totals').appendChild(totals)
+                document.getElementById('push-embed').appendChild(totals)
             })
         </script>
-    </head>
-    <body>
-        <div class="push">
-            <div style="padding: 16px">
-                <div class="prose pt-4 pb-2">
-                    <h1 class="">Totals</h1>
-                </div>
-                <div class="grid grid-cols-1">
-                    <div id="totals"></div>
-                </div>
-            </div>
-        </div>
     </body>
 </html>

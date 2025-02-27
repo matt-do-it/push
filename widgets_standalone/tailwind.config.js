@@ -7,7 +7,14 @@ module.exports = {
         './src/*.js',
     ],
     theme: {
-        extend: {},
+        extend: {
+            fontSize: {
+                xs: ['12px', '16px'],
+                sm: ['14px', '20px'],
+                base: ['16px', '24px'],
+                '4xl': ['36px', '40px'],
+            },
+        },
     },
     daisyui: {
         themes: [

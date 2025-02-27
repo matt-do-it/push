@@ -4,7 +4,7 @@ import DataService from './data_service'
 import PresetService from './preset_service'
 
 import PushSummaryComponent from './push_summary'
-import PushTableComponent from './push_table'
+import PushHistoryComponent from './push_history'
 
 import './style.css'
 
@@ -31,7 +31,7 @@ function embed(component, dataService, args) {
     return element
 }
 
-export { PushSummaryComponent, PushTableComponent }
+export { PushSummaryComponent, PushHistoryComponent }
 export { DataService }
 export { PresetService }
 
