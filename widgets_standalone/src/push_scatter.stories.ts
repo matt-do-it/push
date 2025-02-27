@@ -7,12 +7,12 @@ import DataService from './data_service'
 import DateCalcService from './date_service'
 
 import { renderComponent } from '@glimmerx/core'
-import PushValuesComponent from './push_values'
+import PushScatterComponent from './push_scatter'
 
 import './style.css'
 
 const meta = {
-    title: 'Push/PushValues',
+    title: 'Push/PushScatter',
     tags: ['autodocs'],
     render: (args) => {
         let dataService = new DataService()
@@ -30,7 +30,7 @@ const meta = {
         dataService.windowFilter = args.windowFilter
 
         let element = document.createElement('div')
-        renderComponent(PushValuesComponent, {
+        renderComponent(PushScatterComponent, {
             element: element,
             args: args,
             services: {
@@ -41,7 +41,7 @@ const meta = {
     },
     argTypes: {
         title: { control: 'text', table: { category: 'Widget options' } },
-        categoryColumns: { control: 'object', table: { category: 'Widget options' } },
+        valueColumns: { control: 'object', table: { category: 'Widget options' } },
         display: {
             control: 'select',
             table: { category: 'Widget options' },
@@ -77,21 +77,25 @@ const meta = {
             },
         },
     },
-} satisfies Meta<PushValuesProps>
+} satisfies Meta<PushScatterProps>
 
 export default meta
-type Story = StoryObj<PushValuesProps>
+type Story = StoryObj<PushScatterProps>
 
 export const Default: Story = {
     args: {
         title: 'Title',
         dateColumn: 'date',
-        categoryColumns: null,
+        valueColumns: null,
         display: 'isoquarter',
         format: 'number',
         filter: null,
         groupColumns: ['date', 'group'],
-        rollup: { value: 'op.sum(d.value)' },
+        rollup: {
+        	value: 'op.sum(d.value)', 
+        	value2: 'op.sum(d.value2)', 
+        	value3: 'op.sum(d.value3)'  
+        },
         derive: {},
         windowFilter: null,
         presetName: 'default',

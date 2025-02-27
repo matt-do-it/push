@@ -9,7 +9,13 @@ import vegaModifier from './vega_modifier'
 import dateFormatHelper from './date_format_helper'
 
 import InputComponent from './input_component'
-import TextareaComponent from './text_area'
+import SelectComponent from './select_component'
+
+import valueFormatHelper, { availableFormats } from './value_format_helper'
+import displayFormatHelper, { availableDisplays } from './display_format_helper'
+
+import { formatFor } from './formats'
+import vegaConfig from './vega_config'
 
 import {
     precompileTemplate,
@@ -23,13 +29,21 @@ const formatDisplay = helper(([name], { greeting }) => {
 })
 
 class PushScatterComponent extends Component {
-    @service data
-
-    @tracked _dateColumn
-    @tracked _valueXColumn
-    @tracked _valueYColumn
+	@tracked _title
+    @tracked _format
+    @tracked _display
 
     @tracked editMode
+
+    get data() {
+        let applicationInstance = getOwner(this)
+
+        return applicationInstance.services[this.args.service || 'data']
+    }
+
+    get title() {
+		return this._title || this.args.title    
+	}
 
     get values() {
         return this.latestSummarizedTable.objects()
@@ -40,37 +54,43 @@ class PushScatterComponent extends Component {
     }
 
     @cached
-    get valueXColumn() {
-        return this._valueXColumn || this.args.valueXColumn || 'value'
-    }
-
-    @cached
-    get valueYColumn() {
-        return this._valueYColumn || this.args.valueYColumn || 'value'
-    }
-
-    @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
     }
 
     @cached
+    get format() {
+        return this._format || this.args.format || 'number'
+    }
+
+    @cached
     get display() {
-        return this.args.display || 'isoquarter'
+        return this._display || this.args.display || 'isoweek'
     }
 
-    get columns() {
-        if (this.args.columns) {
-            return this.args.columns
-        } else {
-            return this.data.categoryColumns
-        }
-    }
+	get valueColumns() {
+		return this.args.valueColumns || this.data.numberColumns
+	}
+	
+	get valueColumnPairs() {
+		let pairs = [];
 
+		let valueColumns = this.valueColumns;
+		
+  		// Schleife durch alle Elemente im Array
+  		for (let i = 0; i < valueColumns.length; i++) {
+    		for (let j = i + 1; j < valueColumns.length; j++) {
+      			pairs.push([valueColumns[i], valueColumns[j]]);
+    		}
+  		}
+  		
+  		return pairs;
+	}
+	
     @cached
     get latestSummarizedTable() {
         try {
@@ -82,7 +102,7 @@ class PushScatterComponent extends Component {
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
@@ -100,21 +120,81 @@ class PushScatterComponent extends Component {
     }
 
     get specs() {
-        return this.columns.map((c) => this.vegaSpec(c))
+        return this.valueColumnPairs.map((c) => this.vegaSpec(c[0], c[1]))
     }
 
-    vegaSpec(column) {
+    vegaSpec(valueColumn1, valueColumn2) {
         return {
-            width: 200,
+            width: "container",
+            height: "container",
             data: {
                 values: this.values,
             },
             mark: 'point',
             encoding: {
-                x: { field: this.valueXColumn, type: 'quantitative' },
-                y: { field: this.valueYColumn, type: 'quantitative' },
+                x: { 
+                	field: valueColumn1, 
+                	type: 'quantitative',
+                	axis: {
+                        format: formatFor(this.format),
+                    } 
+                },
+                y: { 
+                	field: valueColumn2, 
+                	type: 'quantitative',
+                	axis: {
+                        format: formatFor(this.format),
+                    } 
+                },
             },
         }
+        
+        const vegaSpec = compile(liteSpec, {
+            config: vegaConfig(),
+        }).spec
+
+        return vegaSpec
+
+    }
+
+    get availableFormats() {
+        return availableFormats
+    }
+
+    get availableDisplays() {
+        return availableDisplays
+    }
+
+    @action
+    updateTitle(input) {
+        try {
+            this._title = input
+        } catch (error) {
+            this._title = null
+        }
+    }
+
+    @action
+    updateDisplay(input) {
+        try {
+            this._display = input
+        } catch (error) {
+            this._display = null
+        }
+    }
+
+    @action
+    updateFormat(input) {
+        try {
+            this._format = input
+        } catch (error) {
+            this._format = null
+        }
+    }
+
+    @action
+    toggleEditMode() {
+        this.editMode = !this.editMode
     }
 }
 
@@ -122,18 +202,52 @@ setComponentTemplate(
     precompileTemplate(
         `
       <div class="push widget">
+		{{#unless this.editMode}}
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-    		<div class="widget-title">Values</div>
-  			{{#each this.specs as |col|}}
-    			<div class="render" {{vegaModifier col}}></div>
-    		{{/each}}
+    		<div class="widget-title">{{this.title}}</div>
+    		<div class="widget-canvas-grid grid sm:grid-cols-3">
+  				{{#each this.specs as |col|}}
+			  		<div class="widget-canvas aspect-video w-full" {{vegaModifier col}}></div>
+    			{{/each}}
+    		</div>
+			<div class="widget-toggle">
+				<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
+			</div>
     	</div>
+    	{{/unless}}
+			{{#if this.editMode}}
+			<div class="widget-edit">
+				<div class="widget-edit-title">Bearbeiten</div>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div class="field">
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Format" @value={{this.format}} @options={{this.availableFormats}} @onInput={{this.updateFormat}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Display" @value={{this.display}} @options={{this.availableDisplays}} @onInput={{this.updateDisplay}}/>
+					</div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
+				</div>
+			</div>
+			{{/if}}
   	</div>
     `,
         {
             strictMode: true,
-            scope: { on, formatDisplay, dateFormatHelper, vegaModifier },
+            scope: {
+                on,
+                formatDisplay,
+                dateFormatHelper,
+                vegaModifier,
+                
+                InputComponent,
+                SelectComponent,
+            },
         }
     ),
     PushScatterComponent

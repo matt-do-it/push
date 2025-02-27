@@ -6,15 +6,17 @@ import { table, agg, op } from 'arquero'
 import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 
-import valueFormatHelper, { numberFormatter } from './value_format_helper'
-import displayFormatHelper from './display_format_helper'
+import formatterFor from './formatters'
+import valueFormatHelper, { availableFormats } from './value_format_helper'
+import displayFormatHelper, { availableDisplays } from './display_format_helper'
+
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
 import trendFormatHelper from './trend_format_helper'
 import dateFormatHelper from './date_format_helper'
 
 import InputComponent from './input_component'
-import TextareaComponent from './text_area'
+import SelectComponent from './select_component'
 
 import {
     precompileTemplate,
@@ -27,10 +29,11 @@ import * as d3 from 'd3'
 
 class PushHierarchyComponent extends Component {
     @service data
-    @service dateCalc
 
-    @tracked _dateColumn
+    @tracked _title
     @tracked _valueColumn
+    @tracked _display
+    @tracked _format
 
     @tracked width
     @tracked height
@@ -43,16 +46,22 @@ class PushHierarchyComponent extends Component {
     @tracked shouldAnimate = true
 
     get title() {
-        if (this.args.title) {
-            return this.args.title
-        } else {
-            return 'Hierarchy'
-        }
+    	return this._title || this.args.title || "Hierarchy";
     }
 
     @cached
     get valueColumn() {
         return this._valueColumn || this.args.valueColumn || 'value'
+    }
+
+    @cached
+    get format() {
+        return this._format || this.args.format || 'number'
+    }
+
+    @cached
+    get display() {
+        return this._display || this.args.display || 'isoweek'
     }
 
     @cached
@@ -62,16 +71,6 @@ class PushHierarchyComponent extends Component {
         } catch (error) {
             return null
         }
-    }
-
-    @cached
-    get format() {
-        return this.args.format || 'number'
-    }
-
-    @cached
-    get display() {
-        return this.args.display || 'isoquarter'
     }
 
     @cached
@@ -431,20 +430,20 @@ class PushHierarchyComponent extends Component {
 
                 ctx.fillStyle = 'white'
                 ctx.textBaseline = 'top'
-                ctx.font = 'bold 12px sans-serif'
+                ctx.font = 'bold 24px sans-serif'
 
-                let textOffset = 2
+                let textOffset = 4
 
                 for (let i = 0; i < d.texts.length; i++) {
-                    ctx.fillText(d.texts[i], d.x + 2, d.y + textOffset)
-                    textOffset = textOffset + 14
+                    ctx.fillText(d.texts[i], d.x + 8, d.y + textOffset + 8)
+                    textOffset = textOffset + 28
                 }
 
                 ctx.fillStyle = 'white'
                 ctx.textBaseline = 'top'
-                ctx.font = '12px sans-serif'
+                ctx.font = '24px sans-serif'
 
-                ctx.fillText(d.formattedValue, d.x + 2, d.y + textOffset)
+                ctx.fillText(d.formattedValue, d.x + 8, d.y + textOffset + 8)
             }.bind(this)
         )
     }
@@ -459,8 +458,7 @@ class PushHierarchyComponent extends Component {
     }
 
     @action
-    drawCanvas(canvasContainer) {
-        const canvas = canvasContainer.querySelector('canvas')
+    drawCanvas(canvas) {
         const ctx = canvas.getContext('2d')
 
         const t = this.dataSelectedRoot
@@ -484,12 +482,24 @@ class PushHierarchyComponent extends Component {
         )
     }
 
+    get availableNumberColumns() {
+        return this.data.numberColumns
+    }
+
+    get availableFormats() {
+        return availableFormats
+    }
+
+    get availableDisplays() {
+        return availableDisplays
+    }
+
     @action
-    updateDateColumn(input) {
+    updateTitle(input) {
         try {
-            this._dateColumn = input
+            this._title = input
         } catch (error) {
-            this._dateColumn = null
+            this._title = null
         }
     }
 
@@ -499,6 +509,24 @@ class PushHierarchyComponent extends Component {
             this._valueColumn = input
         } catch (error) {
             this._valueColumn = null
+        }
+    }
+
+    @action
+    updateDisplay(input) {
+        try {
+            this._display = input
+        } catch (error) {
+            this._display = null
+        }
+    }
+
+    @action
+    updateFormat(input) {
+        try {
+            this._format = input
+        } catch (error) {
+            this._format = null
         }
     }
 
@@ -556,30 +584,36 @@ setComponentTemplate(
 				{{/each}}
 			</div>
 			<div class="widget-canvas aspect-video">
-				<div class="canvas-container" style="position: relative; width: 100%; height: 500px" {{canvasModifier this}}>
-					<canvas class="canvas" class="cursor-pointer" {{on "click" this.mouseClick}}></canvas>
+				<div class="canvas-container" style="position: relative; width: 100%; height: 100%">
+					<canvas class="canvas" class="cursor-pointer" {{canvasModifier this}} {{on "click" this.mouseClick}}></canvas>
 					<div class="data"></div>
 				</div>
 			</div>	
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
+				</div>
 		</div>
 		{{/unless}}
 		{{#if this.editMode}}
     	<div class="widget-edit">
     		<div class="widget-edit-title">Bearbeiten</div>
-    		<div class="grid grid-cols-3 gap-4">
-    			<div class="field">
-    			    <InputComponent @title="Date column" @value={{this.data.dateColumn}} @onInput={{this.updateDateColumn}}/>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div class="field">
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Value column" @value={{this.valueColumn}} @options={{this.availableNumberColumns}} @onInput={{this.updateValueColumn}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Format" @value={{this.format}} @options={{this.availableFormats}} @onInput={{this.updateFormat}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Display" @value={{this.display}} @options={{this.availableDisplays}} @onInput={{this.updateDisplay}}/>
+					</div>
 				</div>
-    			<div class="field">
-    			    <InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
 				</div>
-    		</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
     	</div>
     	{{/if}}
 	</div>
@@ -598,7 +632,7 @@ setComponentTemplate(
                 dateFormatHelper,
 
                 InputComponent,
-                TextareaComponent,
+                SelectComponent,
             },
         }
     ),

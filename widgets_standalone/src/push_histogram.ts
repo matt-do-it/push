@@ -46,9 +46,9 @@ class PushHistogramComponent extends Component {
 		return this._title || this.args.title
     }
 
-    get binColumns() {
-        if (this.args.binColumns) {
-            return this.args.binColumns;
+    get valueColumns() {
+        if (this.args.valueColumns) {
+            return this.args.valueColumns;
         }
 
         let numberColumns = this.data.numberColumns
@@ -58,8 +58,8 @@ class PushHistogramComponent extends Component {
         return filteredNumberColumns
     }
 
-    get binColumnsFormatted() {
-        return this.binColumns.map(
+    get valueColumnsFormatted() {
+        return this.valueColumns.map(
             function (e) {
                 let median = null
                 let q25 = null
@@ -219,7 +219,7 @@ setComponentTemplate(
 				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
 				<div class="widget-title">{{this.title}}</div>
 				<div class="widget-canvas-grid flex flex-row justify-stretch">
-					{{#each this.binColumnsFormatted as |column|}}
+					{{#each this.valueColumnsFormatted as |column|}}
 						<div class="flex flex-col flex-auto w-10 overflow-hidden">
 							<div class="widget-canvas aspect-video w-full">
 								<div style="width: 100%; height: 100%"

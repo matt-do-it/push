@@ -32,6 +32,7 @@ const formatDisplay = helper(([name], { greeting }) => {
 })
 
 class PushValuesComponent extends Component {
+	@tracked _title
     @tracked _valueColumn
     @tracked _format
     @tracked _display
@@ -77,8 +78,8 @@ class PushValuesComponent extends Component {
         }
     }
 
-    get columns() {
-        return this.args.columns || this.data.categoryColumns
+    get categoryColumns() {
+        return this.args.categoryColumns || this.data.categoryColumns
     }
 
     @cached
@@ -110,7 +111,7 @@ class PushValuesComponent extends Component {
     }
 
     get specs() {
-        return this.columns.map((c) => this.vegaSpec(c))
+        return this.categoryColumns.map((c) => this.vegaSpec(c))
     }
 
     vegaSpec(column) {
@@ -202,21 +203,18 @@ setComponentTemplate(
 		{{#unless this.editMode}}
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
-    		<div class="widget-title">{{@title}}</div>
-			<div class="widget-canvas-row flex flex-row justify-stretch">
+    		<div class="widget-title">{{this.title}}</div>
+    		<div class="widget-canvas-grid grid sm:grid-cols-3">
 	  			{{#each this.specs as |col|}}
-	  				<div class="flex flex-col flex-auto w-10 overflow-hidden">
-	  					<div class="widget-canvas aspect-video w-full">
-		    				<div style="width: 100%; height: 100%" {{vegaModifier col}}></div>
+	  					<div class="widget-canvas aspect-video w-full" {{vegaModifier col}}>
 		    			</div>
-	    			</div>
     			{{/each}}
     		</div>
-				<div class="widget-toggle">
-					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
-				</div>
+			<div class="widget-toggle">
+				<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
+			</div>
     	</div>
-    				{{/unless}}
+    	{{/unless}}
 			{{#if this.editMode}}
 			<div class="widget-edit">
 				<div class="widget-edit-title">Bearbeiten</div>

@@ -90,7 +90,7 @@ export const Default: Story = {
         display: 'isoquarter',
         format: 'number',
         filter: null,
-        groupColumns: ['date'],
+        groupColumns: ['date', 'group'],
         rollup: { value: 'op.sum(d.value)' },
         derive: {},
         windowFilter: null,
