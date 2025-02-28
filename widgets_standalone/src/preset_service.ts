@@ -11,6 +11,7 @@ export default class PresetService {
                     {
                         date: '2024-07-01',
                         group: 'Group A',
+                        group2: 'Subgroup A.I',
                         value: 500,
                         value2: 300,
                         value3: 400
@@ -18,6 +19,23 @@ export default class PresetService {
                     {
                         date: '2024-07-01',
                         group: 'Group B',
+                        group2: 'Subgroup B.I',
+                        value: 700,
+                        value2: 500,
+                        value3: 500
+                    },
+                    {
+                        date: '2024-07-01',
+                        group: 'Group A',
+                        group2: 'Subgroup A.II',
+                        value: 500,
+                        value2: 300,
+                        value3: 400
+                    },
+                    {
+                        date: '2024-07-01',
+                        group: 'Group B',
+                        group2: 'Subgroup B.II',
                         value: 700,
                         value2: 500,
                         value3: 500
@@ -25,6 +43,7 @@ export default class PresetService {
                     {
                         date: '2024-04-01',
                         group: 'Group A',
+                        group2: 'Subgroup A.I',
                         value: 200,
                         value2: 700,
                         value3: 20
@@ -32,6 +51,7 @@ export default class PresetService {
                     {
                         date: '2024-04-01',
                         group: 'Group B',
+                        group2: 'Subgroup B.I',
                         value: 300,
                         value2: 800,
                         value3: 90
@@ -39,6 +59,7 @@ export default class PresetService {
                     {
                         date: '2024-01-01',
                         group: 'Group A',
+                        group2: 'Subgroup A.I',
                         value: 100,
                         value2: 200,
                         value3: 250
@@ -46,6 +67,7 @@ export default class PresetService {
                     {
                         date: '2024-01-01',
                         group: 'Group B',
+                        group2: 'Subgroup B.I',
                         value: 700,
                         value2: 400,
                         value3: 130

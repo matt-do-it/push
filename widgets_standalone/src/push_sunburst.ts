@@ -6,15 +6,17 @@ import { table, agg, op } from 'arquero'
 import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 
-import valueFormatHelper, { numberFormatter } from './value_format_helper'
-import displayFormatHelper from './display_format_helper'
+import formatterFor from './formatters'
+import valueFormatHelper, { availableFormats } from './value_format_helper'
+import displayFormatHelper, { availableDisplays } from './display_format_helper'
+
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
 import trendFormatHelper from './trend_format_helper'
 import dateFormatHelper from './date_format_helper'
 
 import InputComponent from './input_component'
-import TextareaComponent from './text_area'
+import SelectComponent from './select_component'
 
 import {
     precompileTemplate,
@@ -27,10 +29,11 @@ import * as d3 from 'd3'
 
 class PushSunburstComponent extends Component {
     @service data
-    @service dateCalc
 
-    @tracked _dateColumn
+    @tracked _title
     @tracked _valueColumn
+    @tracked _display
+    @tracked _format
 
     @tracked width
     @tracked height
@@ -42,17 +45,9 @@ class PushSunburstComponent extends Component {
     @tracked timer = null
     @tracked shouldAnimate = true
 
-    get title() {
-        if (this.args.title) {
-            return this.args.title
-        } else {
-            return 'Hierarchy'
-        }
-    }
 
-    @cached
-    get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
+    get title() {
+    	return this._title || this.args.title || "Hierarchy";
     }
 
     @cached
@@ -61,23 +56,25 @@ class PushSunburstComponent extends Component {
     }
 
     @cached
+    get format() {
+        return this._format || this.args.format || 'number'
+    }
+
+    @cached
+    get display() {
+        return this._display || this.args.display || 'isoweek'
+    }
+
+    @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
     }
 
-    @cached
-    get format() {
-        return this.args.format || 'number'
-    }
 
-    @cached
-    get display() {
-        return this.args.display || 'isoquarter'
-    }
 
     @cached
     get windowFilter() {
@@ -100,7 +97,7 @@ class PushSunburstComponent extends Component {
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
             return totalTable
@@ -126,7 +123,7 @@ class PushSunburstComponent extends Component {
     get groupColumns() {
         let g = [...this.data.groupColumns]
 
-        let dateIndex = g.indexOf(this.dateColumn)
+        let dateIndex = g.indexOf(this.data.dateColumn)
         if (dateIndex > -1) {
             g.splice(dateIndex, 1)
         }
@@ -246,6 +243,7 @@ class PushSunburstComponent extends Component {
 
     mapToObject(tree, level) {
         let keys = Array.from(tree.keys())
+
         let children = keys.map(
             function (key) {
                 let childTree = tree.get(key)
@@ -295,7 +293,7 @@ class PushSunburstComponent extends Component {
         )
 
         let keys = [...this.groupColumns]
-        const dateIndex = keys.indexOf(this.dateColumn)
+        const dateIndex = keys.indexOf(this.data.dateColumn)
         if (dateIndex > -1) {
             keys.splice(dateIndex, 1)
         }
@@ -333,7 +331,7 @@ class PushSunburstComponent extends Component {
         }
     }
 
-    get dataAncenstors() {
+    get dataAncestors() {
         return this.dataSelectedRoot.ancestors().reverse()
     }
 
@@ -348,19 +346,27 @@ class PushSunburstComponent extends Component {
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
-        let relevantNodes = []
+        let relevantNodes = [
+        ]
+        
         let ancestors = this.dataSelectedRoot.ancestors()
 
-        ancestors.forEach(function (e) {
-            let others = e.children.filter(function (d) {
-                return true
-                return !ancestors.includes(d)
-            })
-            relevantNodes = relevantNodes.concat(others)
+        ancestors.reverse().forEach(function (e) {
+        	if (e.children) {
+				let others = e.children.filter(function (d) {
+					return true; 	
+				})
+				
+				relevantNodes = relevantNodes.concat(others)
+        	}
         })
 
-        relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
+		if (this.dataSelectedRoot.children) {
+	        relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
+		}
 
+		let curDepth = this.dataSelectedRoot.depth + 1;
+		
         return relevantNodes.map(
             function (d) {
                 let animated = {
@@ -371,12 +377,15 @@ class PushSunburstComponent extends Component {
                     color: color(d.data.color),
                     formattedValue: valueFormatHelper([d.value, this.format]),
                     node: d,
+                    canSelect: d.children != null, 
+                    outer: d.depth == curDepth
                 }
 
                 let texts = []
 
                 let p = d.ancestors().reverse()
 
+				
                 for (let i = 1; i < displayIndices.length; i++) {
                     if (displayIndices[i] + 1 < p.length) {
                         let t = p[displayIndices[i] + 1].data.name
@@ -386,7 +395,12 @@ class PushSunburstComponent extends Component {
                     }
                 }
 
-                animated['texts'] = texts
+				if (d.depth == curDepth) {
+	                animated['texts'] = texts
+				} else {
+	                animated['texts'] = ""
+	                animated['formattedValue'] = ""
+				}
 
                 return animated
             }.bind(this)
@@ -417,42 +431,52 @@ class PushSunburstComponent extends Component {
                 ctx.strokeStyle = 'white'
                 ctx.strokeWidth = 2
 
-                let baseRadius = this.width / 6
-                let baseOffset = this.width / 20
+                let baseRadius = this.width / 20
+                let baseOffset = this.width / 10
 
                 let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius
                 let outerRadius = baseOffset + d.levelStart * baseRadius
 
+				let animatedArcPoint = d3.scaleLinear([0, 1], [0, 2 * Math.PI])(scaledElapsed);
+				
+				let animatedArcStart = d.arcStart;
+				let animatedArcEnd = d.arcEnd; 
+				
+				if (d.outer) {
+					animatedArcStart = Math.min(animatedArcPoint, d.arcStart);
+				 	animatedArcEnd = Math.min(animatedArcPoint, d.arcEnd); 
+				}
+				
                 ctx.lineWidth = 3
 
                 var innerStartX =
-                    this.width / 2 + Math.cos(d.arcStart) * innerRadius
+                    this.width / 2 + Math.cos(animatedArcStart) * innerRadius
                 var innerStartY =
-                    this.height / 2 + Math.sin(d.arcStart) * innerRadius
+                    this.height / 2 + Math.sin(animatedArcStart) * innerRadius
 
                 var innerEndX =
-                    this.width / 2 + Math.cos(d.arcEnd) * innerRadius
+                    this.width / 2 + Math.cos(animatedArcEnd) * innerRadius
                 var innerEndY =
-                    this.height / 2 + Math.sin(d.arcEnd) * innerRadius
+                    this.height / 2 + Math.sin(animatedArcEnd) * innerRadius
 
                 var outerEndX =
-                    this.width / 2 + Math.cos(d.arcEnd) * outerRadius
+                    this.width / 2 + Math.cos(animatedArcEnd) * outerRadius
                 var outerEndY =
-                    this.height / 2 + Math.sin(d.arcEnd) * outerRadius
+                    this.height / 2 + Math.sin(animatedArcEnd) * outerRadius
 
                 var outerStartX =
-                    this.width / 2 + Math.cos(d.arcStart) * outerRadius
+                    this.width / 2 + Math.cos(animatedArcStart) * outerRadius
                 var outerStartY =
-                    this.height / 2 + Math.sin(d.arcStart) * outerRadius
+                    this.height / 2 + Math.sin(animatedArcStart) * outerRadius
 
                 var outerTextX =
                     this.width / 2 +
-                    Math.cos((d.arcStart + d.arcEnd) / 2) * outerRadius +
-                    5
+                    Math.cos((d.arcStart + d.arcEnd) / 2) * (outerRadius +
+                    5)
                 var outerTextY =
                     this.height / 2 +
-                    Math.sin((d.arcStart + d.arcEnd) / 2) * outerRadius +
-                    5
+                    Math.sin((d.arcStart + d.arcEnd) / 2) * (outerRadius +
+                    5)
 
                 ctx.beginPath()
 
@@ -461,16 +485,16 @@ class PushSunburstComponent extends Component {
                     this.width / 2,
                     this.height / 2,
                     innerRadius,
-                    d.arcStart,
-                    d.arcEnd
+                    animatedArcStart,
+                    animatedArcEnd
                 )
                 ctx.lineTo(outerEndX, outerEndY)
                 ctx.arc(
                     this.width / 2,
                     this.height / 2,
                     outerRadius,
-                    d.arcEnd,
-                    d.arcStart,
+                    animatedArcEnd,
+                    animatedArcStart,
                     true
                 )
                 ctx.lineTo(innerStartX, innerStartY)
@@ -481,28 +505,33 @@ class PushSunburstComponent extends Component {
                 let levels = 0
                 let texts = []
 
-                ctx.fillStyle = 'black'
+				let animatedOpacity = d3.scaleLinear([0, 0.9, 1], [0, 0, 1])(scaledElapsed);
+				
+                ctx.fillStyle = "rgb(0, 0, 0, " + animatedOpacity + ")"
                 ctx.textBaseline = 'top'
-                ctx.font = 'bold 12px sans-serif'
+                ctx.font = 'bold 24px sans-serif'
                 ctx.textAlign = 'left'
 
-                let textOffset = 2
-
+				
+				let lines = d.texts.length + 1; 
+				let lineHeight = 26; 
+				let textOffset = - (lines * 26) / 2; 
+				
                 for (let i = 0; i < d.texts.length; i++) {
                     ctx.save()
                     ctx.translate(outerTextX, outerTextY)
                     ctx.rotate((d.arcStart + d.arcEnd) / 2)
 
                     ctx.fillText(d.texts[i], 0, textOffset)
-                    textOffset = textOffset + 14
+                    textOffset = textOffset + lineHeight
                     ctx.restore()
                 }
 
-                ctx.fillStyle = 'black'
+                ctx.fillStyle = "rgb(0, 0, 0, " + animatedOpacity + ")"
                 ctx.textBaseline = 'top'
-                ctx.font = '12px sans-serif'
+                ctx.font = '24px sans-serif'
                 ctx.textAlign = 'left'
-
+				
                 ctx.save()
                 ctx.translate(outerTextX, outerTextY)
                 ctx.rotate((d.arcStart + d.arcEnd) / 2)
@@ -515,6 +544,7 @@ class PushSunburstComponent extends Component {
 
     @action
     drawAll(ctx, scaledElapsed) {
+    	ctx.reset()
         ctx.rect(0, 0, this.width, this.height)
         ctx.fillStyle = 'white'
         ctx.fill()
@@ -523,8 +553,7 @@ class PushSunburstComponent extends Component {
     }
 
     @action
-    drawCanvas(canvasContainer) {
-        const canvas = canvasContainer.querySelector('canvas')
+    drawCanvas(canvas) {
         const ctx = canvas.getContext('2d')
 
         const t = this.dataSelectedRoot
@@ -534,26 +563,43 @@ class PushSunburstComponent extends Component {
         if (this.timer) {
             this.timer.stop()
         }
-        this.drawAll(ctx, 0)
-        this.timer = d3.timer(
-            function (elapsed) {
-                var scaledElapsed = timeScale(elapsed)
-                this.drawAll(ctx, scaledElapsed)
-                if (scaledElapsed == 1) {
-                    this.timer.stop()
-                    this.shouldAnimate = false
-                }
-            }.bind(this),
-            150
-        )
+        
+        if (this.shouldAnimate) {
+			this.drawAll(ctx, 0)
+			this.timer = d3.timer(
+				function (elapsed) {
+					var scaledElapsed = timeScale(elapsed)
+					this.drawAll(ctx, scaledElapsed)
+					if (scaledElapsed == 1) {
+						this.timer.stop()
+						this.shouldAnimate = false
+					}
+				}.bind(this),
+				150
+			)
+        } else {
+ 			this.drawAll(ctx, 1)
+        }
+    }
+
+    get availableNumberColumns() {
+        return this.data.numberColumns
+    }
+
+    get availableFormats() {
+        return availableFormats
+    }
+
+    get availableDisplays() {
+        return availableDisplays
     }
 
     @action
-    updateDateColumn(input) {
+    updateTitle(input) {
         try {
-            this._dateColumn = input
+            this._title = input
         } catch (error) {
-            this._dateColumn = null
+            this._title = null
         }
     }
 
@@ -563,6 +609,24 @@ class PushSunburstComponent extends Component {
             this._valueColumn = input
         } catch (error) {
             this._valueColumn = null
+        }
+    }
+
+    @action
+    updateDisplay(input) {
+        try {
+            this._display = input
+        } catch (error) {
+            this._display = null
+        }
+    }
+
+    @action
+    updateFormat(input) {
+        try {
+            this._format = input
+        } catch (error) {
+            this._format = null
         }
     }
 
@@ -577,13 +641,13 @@ class PushSunburstComponent extends Component {
         var x = event.clientX - rect.left
         var y = event.clientY - rect.top
 
-        var deltaX = this.width / 2 - x
-        var deltaY = this.height / 2 - y
+        var deltaX = (this.width / 2) - 2 * x
+        var deltaY = (this.height / 2)  - 2 * y
         var rad = Math.atan2(deltaY, deltaX) + Math.PI // In radians
         var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
 
-        let baseRadius = this.width / 6
-        let baseOffset = this.width / 20
+        let baseRadius = this.width / 20
+        let baseOffset = this.width / 10
 
         if (!this.dataSelectedRoot.children) {
             return false
@@ -595,24 +659,34 @@ class PushSunburstComponent extends Component {
 
                 let startAngle = d.arcStart
                 let endAngle = d.arcEnd
-                console.log(innerRadius)
+
                 if (
                     rad >= startAngle &&
                     rad <= endAngle &&
                     distance >= innerRadius &&
                     distance <= outerRadius
                 ) {
-                    return true
+                	if (d.canSelect) {
+	                    return true
+                	}
                 } else {
                     return false
                 }
             }.bind(this)
         )
 
+		if (!selectedElement) {
+			if (distance <= baseOffset) {
+				this.selectedNode = this.dataAncestors[0];
+			}
+		
+		}
         if (selectedElement) {
             this.selectedNode = selectedElement.node
             this.shouldAnimate = true
         }
+        
+        this.drawCanvas(event.target);
     }
 
     @action
@@ -620,6 +694,8 @@ class PushSunburstComponent extends Component {
         event.preventDefault()
         this.selectedNode = node
         this.shouldAnimate = false
+
+        this.drawCanvas(event.target);
     }
 }
 
@@ -632,35 +708,40 @@ setComponentTemplate(
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
 			<div class="widget-title">{{this.title}}</div>
 			<div class="widget-back">
-				{{#each this.dataAncenstors as |ancestor|}}
-				/ <a href="#" {{on "click" (fn this.back ancestor)}}>{{ancestor.data.name}}</a> 
+				{{#each this.dataAncestors as |ancestor|}}
+				/ {{ancestor.data.name}}
 				{{/each}}
 			</div>
 			<div class="widget-canvas aspect-video">
-				<div class="canvas-container" style="position: relative; width: 100%; height: 100%" {{canvasModifier this}}>
-					<canvas class="canvas" class="cursor-pointer" {{on "click" this.mouseClick}}></canvas>
-					<div class="data"></div>
+				<div class="canvas-container" style="position: relative; width: 100%; height: 100%">
+					<canvas class="canvas" class="cursor-pointer" {{on "click" this.mouseClick}} {{canvasModifier this}}></canvas>
 				</div>
 			</div>	
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
+				</div>
 		</div>
 		{{/unless}}
 		{{#if this.editMode}}
     	<div class="widget-edit">
     		<div class="widget-edit-title">Bearbeiten</div>
-    		<div class="grid grid-cols-3 gap-4">
-    			<div class="field">
-    			    <InputComponent @title="Date column" @value={{this.dateColumn}} @onInput={{this.updateDateColumn}}/>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div class="field">
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Value column" @value={{this.valueColumn}} @options={{this.availableNumberColumns}} @onInput={{this.updateValueColumn}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Format" @value={{this.format}} @options={{this.availableFormats}} @onInput={{this.updateFormat}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Display" @value={{this.display}} @options={{this.availableDisplays}} @onInput={{this.updateDisplay}}/>
+					</div>
 				</div>
-    			<div class="field">
-    			    <InputComponent @title="Value column" @value={{this.valueColumn}} @onInput={{this.updateValueColumn}}/>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
 				</div>
-    		</div>
-			<div class="widget-toggle">
-				<button class="btn btn-xs btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
-			</div>
     	</div>
     	{{/if}}
 	</div>
@@ -679,8 +760,8 @@ setComponentTemplate(
                 dateFormatHelper,
 
                 InputComponent,
-                TextareaComponent,
-            },
+                SelectComponent,
+           },
         }
     ),
     PushSunburstComponent

@@ -7,12 +7,12 @@ import DataService from './data_service'
 import DateCalcService from './date_service'
 
 import { renderComponent } from '@glimmerx/core'
-import PushHistoryComponent from './push_history'
+import PushSunburstComponent from './push_sunburst'
 
 import './style.css'
 
 const meta = {
-    title: 'Push/PushHistory',
+    title: 'Push/PushSunburst',
     tags: ['autodocs'],
     render: (args) => {
         let dataService = new DataService()
@@ -30,7 +30,7 @@ const meta = {
         dataService.windowFilter = args.windowFilter
 
         let element = document.createElement('div')
-        renderComponent(PushHistoryComponent, {
+        renderComponent(PushSunburstComponent, {
             element: element,
             args: args,
             services: {
@@ -73,14 +73,14 @@ const meta = {
     parameters: {
         docs: {
             description: {
-                component: 'This is a history display of all data',
+                component: 'This is a summary display of all data',
             },
         },
     },
-} satisfies Meta<PushHistoryProps>
+} satisfies Meta<PushSunburstProps>
 
 export default meta
-type Story = StoryObj<PushHistoryProps>
+type Story = StoryObj<PushSunburstProps>
 
 export const Default: Story = {
     args: {
