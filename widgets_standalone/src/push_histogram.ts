@@ -43,12 +43,12 @@ class PushHistogramComponent extends Component {
     }
 
     get title() {
-		return this._title || this.args.title
+        return this._title || this.args.title
     }
 
     get valueColumns() {
         if (this.args.valueColumns) {
-            return this.args.valueColumns;
+            return this.args.valueColumns
         }
 
         let numberColumns = this.data.numberColumns
@@ -164,7 +164,7 @@ class PushHistogramComponent extends Component {
         const vegaSpec = compile(liteSpec, {
             config: vegaConfig(),
         }).spec
-        
+
         return vegaSpec
     }
 
@@ -207,7 +207,6 @@ class PushHistogramComponent extends Component {
     toggleEditMode() {
         this.editMode = !this.editMode
     }
-
 }
 
 setComponentTemplate(

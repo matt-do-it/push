@@ -26,13 +26,12 @@ import {
 
 import vegaConfig from './vega_config'
 
-
 const formatDisplay = helper(([name], { greeting }) => {
     return `${greeting} ${name}`
 })
 
 class PushValuesComponent extends Component {
-	@tracked _title
+    @tracked _title
     @tracked _valueColumn
     @tracked _format
     @tracked _display
@@ -46,9 +45,8 @@ class PushValuesComponent extends Component {
     }
 
     get title() {
-		return this._title || this.args.title    
-	}
-
+        return this._title || this.args.title
+    }
 
     get values() {
         return this.latestSummarizedTable.objects()
@@ -127,19 +125,21 @@ class PushValuesComponent extends Component {
             },
             encoding: {
                 x: { field: column },
-                y: { field: this.valueColumn, type: 'quantitative',                     axis: {
+                y: {
+                    field: this.valueColumn,
+                    type: 'quantitative',
+                    axis: {
                         format: formatFor(this.format),
                     },
- },
+                },
             },
         }
-        
-                const vegaSpec = compile(liteSpec, {
+
+        const vegaSpec = compile(liteSpec, {
             config: vegaConfig(),
         }).spec
 
         return vegaSpec
-
     }
 
     get availableFormats() {
@@ -247,7 +247,7 @@ setComponentTemplate(
                 formatDisplay,
                 dateFormatHelper,
                 vegaModifier,
-                
+
                 InputComponent,
                 SelectComponent,
             },

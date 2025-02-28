@@ -28,7 +28,7 @@ import * as d3 from 'd3'
 
 class PushFunnelComponent extends Component {
     @service data
-    
+
     @service dateCalc
     @service formatter
 
@@ -44,19 +44,19 @@ class PushFunnelComponent extends Component {
 
     @cached
     get colorColumn() {
-    	if (this.args.colorColumn) {
-    		return this.args.colorColumn; 
-    	}
-    	
-    	let colorColumn = this.data.groupColumns.filter(function(c) {
-    		return c.endsWith(".color");
-    	})
-    	
-    	if (colorColumn.length > 0) {
-    		return colorColumn[0];
-    	}
+        if (this.args.colorColumn) {
+            return this.args.colorColumn
+        }
 
-        return null;
+        let colorColumn = this.data.groupColumns.filter(function (c) {
+            return c.endsWith('.color')
+        })
+
+        if (colorColumn.length > 0) {
+            return colorColumn[0]
+        }
+
+        return null
     }
 
     @cached
@@ -78,13 +78,15 @@ class PushFunnelComponent extends Component {
 
     @cached
     get groupColumns() {
-    	return this.data.groupColumns.filter(function(c) {
-    		if (c == this.dateColumn || c == this.colorColumn) {
-    			return false; 
-    		} else {
-    			return true; 
-    		}
-    	}.bind(this));
+        return this.data.groupColumns.filter(
+            function (c) {
+                if (c == this.dateColumn || c == this.colorColumn) {
+                    return false
+                } else {
+                    return true
+                }
+            }.bind(this)
+        )
     }
 
     @cached
@@ -109,24 +111,31 @@ class PushFunnelComponent extends Component {
                     .filter(this.data.windowFilter)
             }
 
-			valueTable = valueTable
-				.reify()
-				.params({ groupColumns: this.groupColumns })
-				.derive({ groupTitle: escape((d, $) => op.join($.groupColumns.map((c) => d[c]), "|") )})
-	
-			var anyNonNullExpr =
-				'd => (' +
-				this.valueColumns
-					.filter(function (c) {
-						return !c.isSimpleValue
-					})
-					.map(function (c) {
-						return "d['" + c + "'] > 0"
-					})
-					.join(' || ') +
-				')'
+            valueTable = valueTable
+                .reify()
+                .params({ groupColumns: this.groupColumns })
+                .derive({
+                    groupTitle: escape((d, $) =>
+                        op.join(
+                            $.groupColumns.map((c) => d[c]),
+                            '|'
+                        )
+                    ),
+                })
 
-			valueTable = valueTable.filter(anyNonNullExpr)
+            var anyNonNullExpr =
+                'd => (' +
+                this.valueColumns
+                    .filter(function (c) {
+                        return !c.isSimpleValue
+                    })
+                    .map(function (c) {
+                        return "d['" + c + "'] > 0"
+                    })
+                    .join(' || ') +
+                ')'
+
+            valueTable = valueTable.filter(anyNonNullExpr)
 
             return valueTable
         } catch (error) {
@@ -137,7 +146,7 @@ class PushFunnelComponent extends Component {
 
     @cached
     get values() {
-        let valueTable = this.valueTable;
+        let valueTable = this.valueTable
 
         if (valueTable == null) {
             return []
@@ -151,11 +160,7 @@ class PushFunnelComponent extends Component {
                     if (e[this.valueColumns[i]]) {
                         var modified = {}
 
-                        for (
-                            var j = 0;
-                            j < this.groupColumns.length;
-                            j++
-                        ) {
+                        for (var j = 0; j < this.groupColumns.length; j++) {
                             modified[this.groupColumns[j]] =
                                 e[this.groupColumns[j]]
                         }
@@ -235,48 +240,54 @@ class PushFunnelComponent extends Component {
 
     @cached
     get colorMapping() {
-		const colorValues = [
-			'#5EBD82',
-			'#37A264',
-			'#00884A',
-			'#006C3A',
-			'#00512A',
-			'#56B0FF',
-			'#0096E8',
-			'#007BC0',
-			'#00629A',
-			'#71767C',
-		];
+        const colorValues = [
+            '#5EBD82',
+            '#37A264',
+            '#00884A',
+            '#006C3A',
+            '#00512A',
+            '#56B0FF',
+            '#0096E8',
+            '#007BC0',
+            '#00629A',
+            '#71767C',
+        ]
 
-    	if (this.colorColumn && this.groupColumns.length > 0) {
-    		let valueTable = this.valueTable; 
-    		if (valueTable != null) {
+        if (this.colorColumn && this.groupColumns.length > 0) {
+            let valueTable = this.valueTable
+            if (valueTable != null) {
+                let colorMapping = valueTable
+                    .params({
+                        colorColumn: this.colorColumn,
+                        colorValues: colorValues,
+                    })
+                    .groupby('groupTitle')
+                    .rollup({
+                        range: (d, $) =>
+                            op.min(
+                                op.recode(
+                                    d[$.colorColumn] - 1,
+                                    $.colorValues,
+                                    '#5EBD82'
+                                )
+                            ),
+                        order: (d, $) => op.min(d[$.colorColumn]),
+                    })
+                    .rename({ groupTitle: 'domain' })
+                    .orderby('order')
+                    .reify()
 
-    			let colorMapping = valueTable
-    				.params({ 
-    					colorColumn: this.colorColumn, colorValues: colorValues })
-    				.groupby("groupTitle")
-    				.rollup({ 
-    					"range": (d, $) => op.min(op.recode(d[$.colorColumn] - 1, $.colorValues, "#5EBD82")), 
-    					"order": (d, $) => op.min(d[$.colorColumn])
-    				 })
-    				.rename({ "groupTitle": "domain" })
-    				.orderby("order")
-    				.reify(); 
-    			
-    			return {
-    				domain: colorMapping.column("domain").data, 
-    				range: colorMapping.column("range").data
-    			};
-    			
-    		} 
-    	}
-    	
-    	return {
-    		domain: ["", null], 
-    		range: ["#5EBD82", "#5EBD82"]
-    	}
-    	
+                return {
+                    domain: colorMapping.column('domain').data,
+                    range: colorMapping.column('range').data,
+                }
+            }
+        }
+
+        return {
+            domain: ['', null],
+            range: ['#5EBD82', '#5EBD82'],
+        }
     }
 
     get vegaTimeUnit() {
@@ -317,14 +328,14 @@ class PushFunnelComponent extends Component {
         return tooltips
     }
 
-	get legendTitle() {
-		if (this.groupColumns.length > 0) {
-			return this.groupColumns[0];
-		} else {
-			return "Legende";
-		}
-	}
-	
+    get legendTitle() {
+        if (this.groupColumns.length > 0) {
+            return this.groupColumns[0]
+        } else {
+            return 'Legende'
+        }
+    }
+
     get compiledVegaSpec() {
         let liteSpec = {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -343,16 +354,16 @@ class PushFunnelComponent extends Component {
                         type: 'bar',
                     },
                     encoding: {
-                color: {
-                    field: 'groupTitle',
-                    scale: {
-                        domain: this.colorMapping.domain,
-                        range: this.colorMapping.range,
-                    },
-                    legend: {
-                    	title: this.legendTitle
-                    },
-                },
+                        color: {
+                            field: 'groupTitle',
+                            scale: {
+                                domain: this.colorMapping.domain,
+                                range: this.colorMapping.range,
+                            },
+                            legend: {
+                                title: this.legendTitle,
+                            },
+                        },
                         x: {
                             field: 'phase',
                             sort: this.phaseTitles,

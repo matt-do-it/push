@@ -41,7 +41,10 @@ const meta = {
     },
     argTypes: {
         title: { control: 'text', table: { category: 'Widget options' } },
-        valueColumns: { control: 'object', table: { category: 'Widget options' } },
+        valueColumns: {
+            control: 'object',
+            table: { category: 'Widget options' },
+        },
         display: {
             control: 'select',
             table: { category: 'Widget options' },

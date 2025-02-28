@@ -46,7 +46,7 @@ class PushHierarchyComponent extends Component {
     @tracked shouldAnimate = true
 
     get title() {
-    	return this._title || this.args.title || "Hierarchy";
+        return this._title || this.args.title || 'Hierarchy'
     }
 
     @cached
@@ -348,15 +348,16 @@ class PushHierarchyComponent extends Component {
 
         let relevantNodes = []
 
-        relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
-
         let ancestors = this.dataSelectedRoot.ancestors()
 
-        ancestors.forEach(function (e) {
-            let others = e.children.filter(function (d) {
-                return !ancestors.includes(d)
-            })
-            relevantNodes = relevantNodes.concat(others)
+        ancestors.reverse().forEach(function (e) {
+            if (e.children) {
+                let others = e.children.filter(function (d) {
+                    return true
+                })
+
+                relevantNodes = relevantNodes.concat(others)
+            }
         })
 
         let mappedNodes = relevantNodes.map(
@@ -389,9 +390,9 @@ class PushHierarchyComponent extends Component {
                 return animated
             }.bind(this)
         )
-        
-        console.log(mappedNodes);
-        
+
+        console.log(mappedNodes)
+
         return mappedNodes
     }
 
@@ -455,6 +456,33 @@ class PushHierarchyComponent extends Component {
         ctx.fill()
 
         this.drawNodes(ctx, scaledElapsed)
+
+        if (true && this.dataSelectedRoot.depth > 0) {
+            let backButton = 40
+
+            ctx.save()
+            ctx.beginPath()
+            ctx.rect(this.width - backButton, 0, backButton, backButton)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+            ctx.fill()
+
+            ctx.fillStyle = 'black'
+            ctx.textBaseline = 'middle'
+            ctx.font = '24px sans-serif'
+            ctx.textAlign = 'center'
+
+            ctx.fillText('⏴', this.width - backButton / 2, backButton / 2)
+
+            ctx.beginPath()
+            ctx.moveTo(this.width - backButton, 0)
+            ctx.lineTo(this.width - backButton, backButton)
+            ctx.lineTo(this.width, backButton)
+
+            ctx.strokeStyle = 'black'
+            ctx.lineWidth = 0.1
+            ctx.stroke()
+            ctx.restore()
+        }
     }
 
     @action
@@ -538,8 +566,8 @@ class PushHierarchyComponent extends Component {
     @action
     mouseClick(event) {
         var rect = event.target.getBoundingClientRect()
-        var x = event.clientX - rect.left
-        var y = event.clientY - rect.top
+        var x = (event.clientX - rect.left) * 2
+        var y = (event.clientY - rect.top) * 2
 
         let selectedElement = this.dataSelectedRoot.children.find(
             function (d) {
@@ -560,6 +588,19 @@ class PushHierarchyComponent extends Component {
             this.selectedNode = selectedElement
             this.shouldAnimate = true
         }
+
+        let backButton = 40
+
+        if (
+            x >= this.width - backButton &&
+            y >= 0 &&
+            x <= this.width &&
+            y <= backButton
+        ) {
+            this.selectedNode = this.selectedNode.parent
+        }
+
+        this.drawCanvas(event.target)
     }
 
     @action
@@ -580,7 +621,7 @@ setComponentTemplate(
 			<div class="widget-title">{{this.title}}</div>
 			<div class="widget-back">
 				{{#each this.dataAncenstors as |ancestor|}}
-				/ <a href="#" {{on "click" (fn this.back ancestor)}}>{{ancestor.data.name}}</a> 
+				/ {{ancestor.data.name}}
 				{{/each}}
 			</div>
 			<div class="widget-canvas aspect-video">

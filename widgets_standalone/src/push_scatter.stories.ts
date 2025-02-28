@@ -41,7 +41,10 @@ const meta = {
     },
     argTypes: {
         title: { control: 'text', table: { category: 'Widget options' } },
-        valueColumns: { control: 'object', table: { category: 'Widget options' } },
+        valueColumns: {
+            control: 'object',
+            table: { category: 'Widget options' },
+        },
         display: {
             control: 'select',
             table: { category: 'Widget options' },
@@ -92,9 +95,9 @@ export const Default: Story = {
         filter: null,
         groupColumns: ['date', 'group'],
         rollup: {
-        	value: 'op.sum(d.value)', 
-        	value2: 'op.sum(d.value2)', 
-        	value3: 'op.sum(d.value3)'  
+            value: 'op.sum(d.value)',
+            value2: 'op.sum(d.value2)',
+            value3: 'op.sum(d.value3)',
         },
         derive: {},
         windowFilter: null,

@@ -41,7 +41,6 @@ class PushTableComponent extends Component {
 
     @tracked _title
 
-	
     get data() {
         if (this.args.service) {
             return getOwner(this).services[this.args.service]
@@ -74,18 +73,17 @@ class PushTableComponent extends Component {
         return this._title || this.args.title
     }
 
-	get columns() {
-		if (this.args.columns) {
-			return this.args.columns
-		} else {
-			return this.data.summarizedTable.columnNames.map(function(c) {
-				return {
-					title: c
-				}
-			})
-		}
-	}
-
+    get columns() {
+        if (this.args.columns) {
+            return this.args.columns
+        } else {
+            return this.data.summarizedTable.columnNames.map(function (c) {
+                return {
+                    title: c,
+                }
+            })
+        }
+    }
 
     @cached
     get date() {
@@ -205,7 +203,6 @@ class PushTableComponent extends Component {
     }
 
     get columns() {
-    	
         if (this.args.columns) {
             return this.args.columns
         } else {
@@ -339,7 +336,7 @@ class PushTableComponent extends Component {
     @action updateOffset(value) {
         this.offset = parseInt(value)
     }
-    
+
     @action
     updateTitle(input) {
         try {

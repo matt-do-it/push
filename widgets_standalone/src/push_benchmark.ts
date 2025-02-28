@@ -29,7 +29,7 @@ import * as d3 from 'd3'
 
 class PushBenchmarkComponent extends Component {
     @service data
-    
+
     @service dateCalc
     @service formatter
 
@@ -44,24 +44,24 @@ class PushBenchmarkComponent extends Component {
 
     @cached
     get colorColumn() {
-    	if (this.args.colorColumn) {
-    		return this.args.colorColumn; 
-    	}
-    	
-    	let colorColumn = this.data.groupColumns.filter(function(c) {
-    		return c.endsWith(".color");
-    	})
-    	
-    	if (colorColumn.length > 0) {
-    		return colorColumn[0];
-    	}
+        if (this.args.colorColumn) {
+            return this.args.colorColumn
+        }
 
-        return null;
+        let colorColumn = this.data.groupColumns.filter(function (c) {
+            return c.endsWith('.color')
+        })
+
+        if (colorColumn.length > 0) {
+            return colorColumn[0]
+        }
+
+        return null
     }
 
-	get valueColumn() {
-		return this.args.valueColumn || "costPerContact";
-	}
+    get valueColumn() {
+        return this.args.valueColumn || 'costPerContact'
+    }
 
     @cached
     get date() {
@@ -84,15 +84,16 @@ class PushBenchmarkComponent extends Component {
 
     @cached
     get groupColumns() {
-    	return this.data.groupColumns.filter(function(c) {
-    		if (c == this.dateColumn || c == this.colorColumn) {
-    			return false; 
-    		} else {
-    			return true; 
-    		}
-    	}.bind(this));
+        return this.data.groupColumns.filter(
+            function (c) {
+                if (c == this.dateColumn || c == this.colorColumn) {
+                    return false
+                } else {
+                    return true
+                }
+            }.bind(this)
+        )
     }
-
 
     @cached
     get valueTable() {
@@ -104,14 +105,12 @@ class PushBenchmarkComponent extends Component {
                 1
             )
 
-            let valueTable = this.data.summarizedTable.filter(
-                function (d) {
-                    return (
-                        d['costPerContact'] != null &&
-                        op.is_finite(d['costPerContact'])
-                    )
-                }
-            )
+            let valueTable = this.data.summarizedTable.filter(function (d) {
+                return (
+                    d['costPerContact'] != null &&
+                    op.is_finite(d['costPerContact'])
+                )
+            })
 
             if (this.date) {
                 valueTable = valueTable
@@ -128,10 +127,17 @@ class PushBenchmarkComponent extends Component {
                     .filter(this.data.windowFilter)
             }
 
-			valueTable = valueTable
-				.reify()
-				.params({ groupColumns: this.groupColumns })
-				.derive({ groupTitle: escape((d, $) => op.join($.groupColumns.map((c) => d[c]), "|") )})
+            valueTable = valueTable
+                .reify()
+                .params({ groupColumns: this.groupColumns })
+                .derive({
+                    groupTitle: escape((d, $) =>
+                        op.join(
+                            $.groupColumns.map((c) => d[c]),
+                            '|'
+                        )
+                    ),
+                })
 
             return valueTable.reify()
         } catch (error) {
@@ -225,7 +231,7 @@ class PushBenchmarkComponent extends Component {
                     calculate:
                         "timeOffset('day', toDate(datum.date), if(dayofyear(timeOffset('day', toDate(datum.date), 3))%7<5,6,-1))",
                     as: 'displayDate',
-                }
+                },
             ],
             encoding: {
                 x: {

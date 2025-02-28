@@ -29,7 +29,7 @@ const formatDisplay = helper(([name], { greeting }) => {
 })
 
 class PushScatterComponent extends Component {
-	@tracked _title
+    @tracked _title
     @tracked _format
     @tracked _display
 
@@ -42,8 +42,8 @@ class PushScatterComponent extends Component {
     }
 
     get title() {
-		return this._title || this.args.title    
-	}
+        return this._title || this.args.title
+    }
 
     get values() {
         return this.latestSummarizedTable.objects()
@@ -72,25 +72,25 @@ class PushScatterComponent extends Component {
         return this._display || this.args.display || 'isoweek'
     }
 
-	get valueColumns() {
-		return this.args.valueColumns || this.data.numberColumns
-	}
-	
-	get valueColumnPairs() {
-		let pairs = [];
+    get valueColumns() {
+        return this.args.valueColumns || this.data.numberColumns
+    }
 
-		let valueColumns = this.valueColumns;
-		
-  		// Schleife durch alle Elemente im Array
-  		for (let i = 0; i < valueColumns.length; i++) {
-    		for (let j = i + 1; j < valueColumns.length; j++) {
-      			pairs.push([valueColumns[i], valueColumns[j]]);
-    		}
-  		}
-  		
-  		return pairs;
-	}
-	
+    get valueColumnPairs() {
+        let pairs = []
+
+        let valueColumns = this.valueColumns
+
+        // Schleife durch alle Elemente im Array
+        for (let i = 0; i < valueColumns.length; i++) {
+            for (let j = i + 1; j < valueColumns.length; j++) {
+                pairs.push([valueColumns[i], valueColumns[j]])
+            }
+        }
+
+        return pairs
+    }
+
     @cached
     get latestSummarizedTable() {
         try {
@@ -125,36 +125,35 @@ class PushScatterComponent extends Component {
 
     vegaSpec(valueColumn1, valueColumn2) {
         return {
-            width: "container",
-            height: "container",
+            width: 'container',
+            height: 'container',
             data: {
                 values: this.values,
             },
             mark: 'point',
             encoding: {
-                x: { 
-                	field: valueColumn1, 
-                	type: 'quantitative',
-                	axis: {
+                x: {
+                    field: valueColumn1,
+                    type: 'quantitative',
+                    axis: {
                         format: formatFor(this.format),
-                    } 
+                    },
                 },
-                y: { 
-                	field: valueColumn2, 
-                	type: 'quantitative',
-                	axis: {
+                y: {
+                    field: valueColumn2,
+                    type: 'quantitative',
+                    axis: {
                         format: formatFor(this.format),
-                    } 
+                    },
                 },
             },
         }
-        
+
         const vegaSpec = compile(liteSpec, {
             config: vegaConfig(),
         }).spec
 
         return vegaSpec
-
     }
 
     get availableFormats() {
@@ -244,7 +243,7 @@ setComponentTemplate(
                 formatDisplay,
                 dateFormatHelper,
                 vegaModifier,
-                
+
                 InputComponent,
                 SelectComponent,
             },

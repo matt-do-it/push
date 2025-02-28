@@ -86,7 +86,7 @@ export const Default: Story = {
     args: {
         title: 'Title',
         dateColumn: 'date',
-        valueColumn: "value",
+        valueColumn: 'value',
         display: 'isoquarter',
         format: 'number',
         filter: null,

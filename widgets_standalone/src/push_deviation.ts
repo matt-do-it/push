@@ -59,9 +59,7 @@ class PushDeviationComponent extends Component {
     }
 
     get columns() {
-        return (
-            this._columns || this.args.columns || this.data.categoryColumns
-        )
+        return this._columns || this.args.columns || this.data.categoryColumns
     }
 
     @cached

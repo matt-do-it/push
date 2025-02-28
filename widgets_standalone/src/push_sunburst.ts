@@ -45,9 +45,8 @@ class PushSunburstComponent extends Component {
     @tracked timer = null
     @tracked shouldAnimate = true
 
-
     get title() {
-    	return this._title || this.args.title || "Hierarchy";
+        return this._title || this.args.title || 'Hierarchy'
     }
 
     @cached
@@ -73,8 +72,6 @@ class PushSunburstComponent extends Component {
             return null
         }
     }
-
-
 
     @cached
     get windowFilter() {
@@ -346,27 +343,26 @@ class PushSunburstComponent extends Component {
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
-        let relevantNodes = [
-        ]
-        
+        let relevantNodes = []
+
         let ancestors = this.dataSelectedRoot.ancestors()
 
         ancestors.reverse().forEach(function (e) {
-        	if (e.children) {
-				let others = e.children.filter(function (d) {
-					return true; 	
-				})
-				
-				relevantNodes = relevantNodes.concat(others)
-        	}
+            if (e.children) {
+                let others = e.children.filter(function (d) {
+                    return true
+                })
+
+                relevantNodes = relevantNodes.concat(others)
+            }
         })
 
-		if (this.dataSelectedRoot.children) {
-	        relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
-		}
+        if (this.dataSelectedRoot.children) {
+            relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
+        }
 
-		let curDepth = this.dataSelectedRoot.depth + 1;
-		
+        let curDepth = this.dataSelectedRoot.depth + 1
+
         return relevantNodes.map(
             function (d) {
                 let animated = {
@@ -377,15 +373,14 @@ class PushSunburstComponent extends Component {
                     color: color(d.data.color),
                     formattedValue: valueFormatHelper([d.value, this.format]),
                     node: d,
-                    canSelect: d.children != null, 
-                    outer: d.depth == curDepth
+                    canSelect: d.children != null,
+                    outer: d.depth == curDepth,
                 }
 
                 let texts = []
 
                 let p = d.ancestors().reverse()
 
-				
                 for (let i = 1; i < displayIndices.length; i++) {
                     if (displayIndices[i] + 1 < p.length) {
                         let t = p[displayIndices[i] + 1].data.name
@@ -395,12 +390,12 @@ class PushSunburstComponent extends Component {
                     }
                 }
 
-				if (d.depth == curDepth) {
-	                animated['texts'] = texts
-				} else {
-	                animated['texts'] = ""
-	                animated['formattedValue'] = ""
-				}
+                if (d.depth == curDepth) {
+                    animated['texts'] = texts
+                } else {
+                    animated['texts'] = ''
+                    animated['formattedValue'] = ''
+                }
 
                 return animated
             }.bind(this)
@@ -437,16 +432,19 @@ class PushSunburstComponent extends Component {
                 let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius
                 let outerRadius = baseOffset + d.levelStart * baseRadius
 
-				let animatedArcPoint = d3.scaleLinear([0, 1], [0, 2 * Math.PI])(scaledElapsed);
-				
-				let animatedArcStart = d.arcStart;
-				let animatedArcEnd = d.arcEnd; 
-				
-				if (d.outer) {
-					animatedArcStart = Math.min(animatedArcPoint, d.arcStart);
-				 	animatedArcEnd = Math.min(animatedArcPoint, d.arcEnd); 
-				}
-				
+                let animatedArcPoint = d3.scaleLinear(
+                    [0, 1],
+                    [0, 2 * Math.PI]
+                )(scaledElapsed)
+
+                let animatedArcStart = d.arcStart
+                let animatedArcEnd = d.arcEnd
+
+                if (d.outer) {
+                    animatedArcStart = Math.min(animatedArcPoint, d.arcStart)
+                    animatedArcEnd = Math.min(animatedArcPoint, d.arcEnd)
+                }
+
                 ctx.lineWidth = 3
 
                 var innerStartX =
@@ -471,12 +469,10 @@ class PushSunburstComponent extends Component {
 
                 var outerTextX =
                     this.width / 2 +
-                    Math.cos((d.arcStart + d.arcEnd) / 2) * (outerRadius +
-                    5)
+                    Math.cos((d.arcStart + d.arcEnd) / 2) * (outerRadius + 5)
                 var outerTextY =
                     this.height / 2 +
-                    Math.sin((d.arcStart + d.arcEnd) / 2) * (outerRadius +
-                    5)
+                    Math.sin((d.arcStart + d.arcEnd) / 2) * (outerRadius + 5)
 
                 ctx.beginPath()
 
@@ -505,18 +501,20 @@ class PushSunburstComponent extends Component {
                 let levels = 0
                 let texts = []
 
-				let animatedOpacity = d3.scaleLinear([0, 0.9, 1], [0, 0, 1])(scaledElapsed);
-				
-                ctx.fillStyle = "rgb(0, 0, 0, " + animatedOpacity + ")"
+                let animatedOpacity = d3.scaleLinear(
+                    [0, 0.9, 1],
+                    [0, 0, 1]
+                )(scaledElapsed)
+
+                ctx.fillStyle = 'rgb(0, 0, 0, ' + animatedOpacity + ')'
                 ctx.textBaseline = 'top'
                 ctx.font = 'bold 24px sans-serif'
                 ctx.textAlign = 'left'
 
-				
-				let lines = d.texts.length + 1; 
-				let lineHeight = 26; 
-				let textOffset = - (lines * 26) / 2; 
-				
+                let lines = d.texts.length + 1
+                let lineHeight = 26
+                let textOffset = -(lines * 26) / 2
+
                 for (let i = 0; i < d.texts.length; i++) {
                     ctx.save()
                     ctx.translate(outerTextX, outerTextY)
@@ -527,11 +525,11 @@ class PushSunburstComponent extends Component {
                     ctx.restore()
                 }
 
-                ctx.fillStyle = "rgb(0, 0, 0, " + animatedOpacity + ")"
+                ctx.fillStyle = 'rgb(0, 0, 0, ' + animatedOpacity + ')'
                 ctx.textBaseline = 'top'
                 ctx.font = '24px sans-serif'
                 ctx.textAlign = 'left'
-				
+
                 ctx.save()
                 ctx.translate(outerTextX, outerTextY)
                 ctx.rotate((d.arcStart + d.arcEnd) / 2)
@@ -544,7 +542,7 @@ class PushSunburstComponent extends Component {
 
     @action
     drawAll(ctx, scaledElapsed) {
-    	ctx.reset()
+        ctx.beginPath()
         ctx.rect(0, 0, this.width, this.height)
         ctx.fillStyle = 'white'
         ctx.fill()
@@ -563,22 +561,22 @@ class PushSunburstComponent extends Component {
         if (this.timer) {
             this.timer.stop()
         }
-        
+
         if (this.shouldAnimate) {
-			this.drawAll(ctx, 0)
-			this.timer = d3.timer(
-				function (elapsed) {
-					var scaledElapsed = timeScale(elapsed)
-					this.drawAll(ctx, scaledElapsed)
-					if (scaledElapsed == 1) {
-						this.timer.stop()
-						this.shouldAnimate = false
-					}
-				}.bind(this),
-				150
-			)
+            this.drawAll(ctx, 0)
+            this.timer = d3.timer(
+                function (elapsed) {
+                    var scaledElapsed = timeScale(elapsed)
+                    this.drawAll(ctx, scaledElapsed)
+                    if (scaledElapsed == 1) {
+                        this.timer.stop()
+                        this.shouldAnimate = false
+                    }
+                }.bind(this),
+                150
+            )
         } else {
- 			this.drawAll(ctx, 1)
+            this.drawAll(ctx, 1)
         }
     }
 
@@ -641,8 +639,8 @@ class PushSunburstComponent extends Component {
         var x = event.clientX - rect.left
         var y = event.clientY - rect.top
 
-        var deltaX = (this.width / 2) - 2 * x
-        var deltaY = (this.height / 2)  - 2 * y
+        var deltaX = this.width / 2 - 2 * x
+        var deltaY = this.height / 2 - 2 * y
         var rad = Math.atan2(deltaY, deltaX) + Math.PI // In radians
         var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
 
@@ -666,27 +664,26 @@ class PushSunburstComponent extends Component {
                     distance >= innerRadius &&
                     distance <= outerRadius
                 ) {
-                	if (d.canSelect) {
-	                    return true
-                	}
+                    if (d.canSelect) {
+                        return true
+                    }
                 } else {
                     return false
                 }
             }.bind(this)
         )
 
-		if (!selectedElement) {
-			if (distance <= baseOffset) {
-				this.selectedNode = this.dataAncestors[0];
-			}
-		
-		}
+        if (!selectedElement) {
+            if (distance <= baseOffset) {
+                this.selectedNode = this.dataAncestors[0]
+            }
+        }
         if (selectedElement) {
             this.selectedNode = selectedElement.node
             this.shouldAnimate = true
         }
-        
-        this.drawCanvas(event.target);
+
+        this.drawCanvas(event.target)
     }
 
     @action
@@ -695,7 +692,7 @@ class PushSunburstComponent extends Component {
         this.selectedNode = node
         this.shouldAnimate = false
 
-        this.drawCanvas(event.target);
+        this.drawCanvas(event.target)
     }
 }
 
@@ -761,7 +758,7 @@ setComponentTemplate(
 
                 InputComponent,
                 SelectComponent,
-           },
+            },
         }
     ),
     PushSunburstComponent
