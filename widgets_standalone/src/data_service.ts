@@ -12,7 +12,7 @@ export default class DataService {
 
     @tracked groupColumns
 
-    @tracked dateColumn
+    @tracked dateColumn = "date";
 
     @tracked rollup
     @tracked derive

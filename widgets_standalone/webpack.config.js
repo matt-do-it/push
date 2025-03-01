@@ -106,13 +106,6 @@ module.exports = [
                 inject: false,
                 scriptLoading: 'module',
             }),
-            new HtmlWebpackPlugin({
-                title: 'Report',
-                filename: 'report.html',
-                template: 'report.html',
-                inject: false,
-                scriptLoading: 'module',
-            }),
             new CopyPlugin({
                 patterns: [{ from: 'vendor', to: 'vendor' }],
             }),

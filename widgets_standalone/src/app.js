@@ -6,7 +6,7 @@ import PushSummaryComponent from './push_summary'
 import AppComponent from './app_component'
 
 import DataService from './data_service'
-import DateCalcService from './date_service'
+
 import PresetService from './preset_service'
 
 import { table, agg, op } from 'arquero'
@@ -16,15 +16,13 @@ import './style.css'
 let dataService = new DataService()
 
 let presetService = new PresetService()
-
-presetService.load(dataService, presetService.presets[0])
+presetService.load(dataService, "default")
 
 renderComponent(AppComponent, {
     element: document.getElementById('app'),
     args: {},
     services: {
         data: dataService,
-        dateCalc: new DateCalcService(),
         preset: presetService,
     },
 })

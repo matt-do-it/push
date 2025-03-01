@@ -6,8 +6,7 @@ import { helper } from '@glimmerx/helper'
 import { hash } from '@glimmer/runtime'
 
 import PushSummaryComponent from './push_summary'
-//import PushTableComponent from './push_table'
-import PushTimeComponent from './push_time'
+import PushTableComponent from './push_table'
 import PushDebugComponent from './push_debug'
 import PushHistogramComponent from './push_histogram'
 import PushHierarchyComponent from './push_hierarchy'
@@ -16,7 +15,6 @@ import PushHistoryComponent from './push_history'
 import PushValuesComponent from './push_values'
 import PushDeviationComponent from './push_deviation'
 import PushScatterComponent from './push_scatter'
-import PushPackComponent from './push_pack'
 import PushSunburstComponent from './push_sunburst'
 
 import NavbarComponent from './navbar'
@@ -106,46 +104,35 @@ setComponentTemplate(
 					<div class="text-2xl font-bold mt-8">
 						Table
 					</div>
-					<div class="text-2xl font-bold mt-8">
-						Debug
-					</div>
-					<PushDebugComponent/>
+					<PushTableComponent/>
 					<div class="text-2xl font-bold mt-8">
 						Histogram
 					</div>
 					 <PushHistogramComponent />
 					<div class="text-2xl font-bold mt-8">
-						Partition
-					</div>
-					 <PushSunburstComponent @colorColumn="color"/>
-					<div class="text-2xl font-bold mt-8">
-						Partition
-					</div>
-					 <PushPartitionComponent @colorColumn="color"/>
-					<div class="text-2xl font-bold mt-8">
-						Pack
-					</div>
-					 <PushPackComponent @colorColumn="color"/>
-					<div class="text-2xl font-bold mt-8">
-						Hierarchy
-					</div>
-					 <PushHierarchyComponent @colorColumn="color"/>
-					<div class="text-2xl font-bold mt-8">
 						History
 					</div>
-					 <PushHistoryComponent @colorColumn="color" @mark="line"/>
+					 <PushHistoryComponent @mark="line"/>
 					<div class="text-2xl font-bold mt-8">
 						Values
 					</div>
 					 <PushValuesComponent/>
 					<div class="text-2xl font-bold mt-8">
-						Standardabweichung
-					</div>
-					 <PushDeviationComponent/>
-					<div class="text-2xl font-bold mt-8">
 						Scatter
 					</div>
 					 <PushScatterComponent/>
+					<div class="text-2xl font-bold mt-8">
+						Hierarchy
+					</div>
+					 <PushHierarchyComponent/>
+					<div class="text-2xl font-bold mt-8">
+						Sunburst
+					</div>
+					 <PushSunburstComponent/>
+					<div class="text-2xl font-bold mt-8">
+						Debug
+					</div>
+					<PushDebugComponent/>
 					</div>
 				</div>
 						  <div class="drawer-side bg-base-100">
@@ -167,6 +154,7 @@ setComponentTemplate(
                 formatDisplay,
                 hash,
                 PushSummaryComponent,
+                PushTableComponent,
                 PushTimeComponent,
                 PushHistogramComponent,
                 PushHierarchyComponent,

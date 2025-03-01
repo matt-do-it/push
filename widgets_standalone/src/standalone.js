@@ -5,34 +5,40 @@ import PresetService from './preset_service'
 
 import PushSummaryComponent from './push_summary'
 import PushHistoryComponent from './push_history'
+import PushHierarchyComponent from './push_hierarchy'
+import PushTableComponent from './push_table'
+import PushSunburstComponent from './push_sunburst'
+import PushScatterComponent from './push_scatter'
+import PushValuesComponent from './push_values'
 
 import './style.css'
 
-async function pushEmbed(component, element, dataService, args) {
-    renderComponent(component, {
-        element: document.getElementById(element),
-        args: args,
-        services: {
-            data: dataService,
-            dateCalc: new DateCalcService(),
-        },
-    })
-}
-
-function embed(component, dataService, args) {
+function pushEmbed(component, dataService, args) {
     let element = document.createElement('div')
+    
     renderComponent(component, {
         element: element,
         args: args,
         services: {
-            data: dataService,
+            data: dataService
         },
     })
+    
     return element
 }
 
-export { PushSummaryComponent, PushHistoryComponent }
+
+export { 
+	PushSummaryComponent, 
+	PushHistoryComponent,
+	PushHierarchyComponent,
+	PushTableComponent,
+	PushSunburstComponent,
+	PushScatterComponent,
+	PushValuesComponent
+}
+
 export { DataService }
 export { PresetService }
 
-export { pushEmbed, embed }
+export { pushEmbed, renderComponent }

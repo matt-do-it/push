@@ -120,9 +120,12 @@ class PushHistoryComponent extends Component {
     @cached
     get valueTable() {
         try {
+        console.log(this.data.summarizedTable);
             if (this.maxDate == null) {
+                console.log("null");
                 return null
             }
+                console.log("not null");
 
             let valueTable = this.data.summarizedTable
 

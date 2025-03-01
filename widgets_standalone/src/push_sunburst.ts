@@ -345,7 +345,6 @@ class PushSunburstComponent extends Component {
     get animatedNodes() {
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
-
 		
         let relevantNodes = []
 

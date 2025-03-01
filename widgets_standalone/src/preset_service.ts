@@ -73,6 +73,14 @@ export default class PresetService {
                         value3: 130,
                     },
                 ],
+                filter: null, 
+                groupColumns: ["date", "group"],
+                rollup: { 
+                	value: 'op.sum(d.value)',
+                	value2: 'op.sum(d.value2)',
+                	value3: 'op.sum(d.value3)' 
+                }, 
+                derive: {}
             },
         }
     }
