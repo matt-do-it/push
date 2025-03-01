@@ -131,7 +131,7 @@ class PushValuesComponent extends Component {
                     axis: {
                         format: formatFor(this.format),
                     },
-                },
+                }
             },
         }
 

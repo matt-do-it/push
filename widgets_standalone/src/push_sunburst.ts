@@ -332,38 +332,48 @@ class PushSunburstComponent extends Component {
         return this.dataSelectedRoot.ancestors().reverse()
     }
 
+	addChilds(relevantNodes, curNode, levelsLeft) {
+		relevantNodes.push(curNode);
+		if (curNode.children && levelsLeft > 0) {
+			curNode.children.forEach(function(e) {
+				this.addChilds(relevantNodes, e, levelsLeft - 1);
+			}.bind(this));
+		}
+	}
+
     @cached
     get animatedNodes() {
-        let displayIndices = this.displayColumns.map(
-            function (e) {
-                return this.groupColumns.indexOf(e)
-            }.bind(this)
-        )
-
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
+		
         let relevantNodes = []
 
-        let ancestors = this.dataSelectedRoot.ancestors()
+		let dataSelectedRoot = this.dataSelectedRoot
 
+		// Ancestors starts with current node, we only need real ancestors
+        let ancestors = dataSelectedRoot.ancestors()
+		ancestors.shift(); 
+		
+		// Add all childs of ancestors
         ancestors.reverse().forEach(function (e) {
+            relevantNodes = relevantNodes.concat(e)
+
             if (e.children) {
-                let others = e.children.filter(function (d) {
-                    return true
+                let children = e.children.filter(function (d) {
+                    return !ancestors.includes(d) && d != dataSelectedRoot;
                 })
 
-                relevantNodes = relevantNodes.concat(others)
+                relevantNodes = relevantNodes.concat(children)
             }
         })
-
-        if (this.dataSelectedRoot.children) {
-            relevantNodes = relevantNodes.concat(this.dataSelectedRoot.children)
-        }
-
-        let curDepth = this.dataSelectedRoot.depth + 1
-
-        return relevantNodes.map(
+        		
+		// Add current node
+		relevantNodes = relevantNodes.concat([dataSelectedRoot])
+				
+		this.addChilds(relevantNodes, dataSelectedRoot, 1);
+		
+        let mappedNodes = relevantNodes.map(
             function (d) {
                 let animated = {
                     arcStart: d.x0,
@@ -372,35 +382,19 @@ class PushSunburstComponent extends Component {
                     levelEnd: d.y1,
                     color: color(d.data.color),
                     formattedValue: valueFormatHelper([d.value, this.format]),
+                    texts: [d.data.name],
+                    root: d.depth == 0,
+                    outer: d.depth > dataSelectedRoot.depth,
                     node: d,
-                    canSelect: d.children != null,
-                    outer: d.depth == curDepth,
-                }
-
-                let texts = []
-
-                let p = d.ancestors().reverse()
-
-                for (let i = 1; i < displayIndices.length; i++) {
-                    if (displayIndices[i] + 1 < p.length) {
-                        let t = p[displayIndices[i] + 1].data.name
-                        if (t) {
-                            texts.push(t)
-                        }
-                    }
-                }
-
-                if (d.depth == curDepth) {
-                    animated['texts'] = texts
-                } else {
-                    animated['texts'] = ''
-                    animated['formattedValue'] = ''
                 }
 
                 return animated
             }.bind(this)
         )
+
+        return mappedNodes
     }
+
 
     @cached
     get xMap() {
@@ -422,9 +416,14 @@ class PushSunburstComponent extends Component {
 
         this.animatedNodes.forEach(
             function (d, i) {
-                ctx.fillStyle = d.color
-                ctx.strokeStyle = 'white'
-                ctx.strokeWidth = 2
+            	if (d.root) {
+					ctx.fillStyle = "gray"
+            	} else {
+					ctx.fillStyle = d.color
+				}
+				
+				ctx.strokeStyle = 'white'
+				ctx.strokeWidth = 2
 
                 let baseRadius = this.width / 20
                 let baseOffset = this.width / 10
@@ -496,7 +495,10 @@ class PushSunburstComponent extends Component {
                 ctx.lineTo(innerStartX, innerStartY)
 
                 ctx.fill()
-                ctx.stroke()
+                
+                if (!d.root) {
+	                ctx.stroke()
+                }
 
                 let levels = 0
                 let texts = []
@@ -506,36 +508,38 @@ class PushSunburstComponent extends Component {
                     [0, 0, 1]
                 )(scaledElapsed)
 
-                ctx.fillStyle = 'rgb(0, 0, 0, ' + animatedOpacity + ')'
-                ctx.textBaseline = 'top'
-                ctx.font = 'bold 24px sans-serif'
-                ctx.textAlign = 'left'
-
-                let lines = d.texts.length + 1
-                let lineHeight = 26
-                let textOffset = -(lines * 26) / 2
-
-                for (let i = 0; i < d.texts.length; i++) {
-                    ctx.save()
-                    ctx.translate(outerTextX, outerTextY)
-                    ctx.rotate((d.arcStart + d.arcEnd) / 2)
-
-                    ctx.fillText(d.texts[i], 0, textOffset)
-                    textOffset = textOffset + lineHeight
-                    ctx.restore()
-                }
-
-                ctx.fillStyle = 'rgb(0, 0, 0, ' + animatedOpacity + ')'
-                ctx.textBaseline = 'top'
-                ctx.font = '24px sans-serif'
-                ctx.textAlign = 'left'
-
-                ctx.save()
-                ctx.translate(outerTextX, outerTextY)
-                ctx.rotate((d.arcStart + d.arcEnd) / 2)
-
-                ctx.fillText(d.formattedValue, 0, textOffset)
-                ctx.restore()
+				if (d.outer) {
+					ctx.fillStyle = 'rgb(0, 0, 0, ' + animatedOpacity + ')'
+					ctx.textBaseline = 'top'
+					ctx.font = 'bold 24px sans-serif'
+					ctx.textAlign = 'left'
+	
+					let lines = d.texts.length + 1
+					let lineHeight = 26
+					let textOffset = -(lines * 26) / 2
+	
+					for (let i = 0; i < d.texts.length; i++) {
+						ctx.save()
+						ctx.translate(outerTextX, outerTextY)
+						ctx.rotate((d.arcStart + d.arcEnd) / 2)
+	
+						ctx.fillText(d.texts[i], 0, textOffset)
+						textOffset = textOffset + lineHeight
+						ctx.restore()
+					}
+	
+					ctx.fillStyle = 'rgb(0, 0, 0, ' + animatedOpacity + ')'
+					ctx.textBaseline = 'top'
+					ctx.font = '24px sans-serif'
+					ctx.textAlign = 'left'
+	
+					ctx.save()
+					ctx.translate(outerTextX, outerTextY)
+					ctx.rotate((d.arcStart + d.arcEnd) / 2)
+	
+					ctx.fillText(d.formattedValue, 0, textOffset)
+					ctx.restore()
+				}
             }.bind(this)
         )
     }
@@ -647,10 +651,7 @@ class PushSunburstComponent extends Component {
         let baseRadius = this.width / 20
         let baseOffset = this.width / 10
 
-        if (!this.dataSelectedRoot.children) {
-            return false
-        }
-        let selectedElement = this.animatedNodes.find(
+        let selectedElements = this.animatedNodes.filter(
             function (d) {
                 let innerRadius = baseOffset + (d.levelStart - 1) * baseRadius
                 let outerRadius = baseOffset + d.levelStart * baseRadius
@@ -658,27 +659,20 @@ class PushSunburstComponent extends Component {
                 let startAngle = d.arcStart
                 let endAngle = d.arcEnd
 
-                if (
+                return (
                     rad >= startAngle &&
                     rad <= endAngle &&
                     distance >= innerRadius &&
-                    distance <= outerRadius
-                ) {
-                    if (d.canSelect) {
-                        return true
-                    }
-                } else {
-                    return false
-                }
+                    distance <= outerRadius &&
+                    d.node.children && 
+                    d.node.children.length > 1
+                )
             }.bind(this)
         )
-
-        if (!selectedElement) {
-            if (distance <= baseOffset) {
-                this.selectedNode = this.dataAncestors[0]
-            }
-        }
-        if (selectedElement) {
+        
+        let selectedElement = null
+        if (selectedElements.length > 0) {
+        	selectedElement = selectedElements[selectedElements.length - 1];
             this.selectedNode = selectedElement.node
             this.shouldAnimate = true
         }

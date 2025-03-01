@@ -72,11 +72,6 @@ class PushHistoryComponent extends Component {
     }
 
     @cached
-    get valueColumn() {
-        return this._valueColumn || this.args.valueColumn || 'value'
-    }
-
-    @cached
     get format() {
         return this._format || this.args.format || 'number'
     }
@@ -178,6 +173,15 @@ class PushHistoryComponent extends Component {
     }
 
     @cached
+    get values() {
+        if (this.valueTable) {
+            return this.valueTable.objects()
+        } else {
+            return []
+        }
+    }
+
+    @cached
     get groupColumns() {
         return this.data.groupColumns.filter(
             function (c) {
@@ -190,14 +194,6 @@ class PushHistoryComponent extends Component {
         )
     }
 
-    @cached
-    get values() {
-        if (this.valueTable) {
-            return this.valueTable.objects()
-        } else {
-            return []
-        }
-    }
 
     @cached
     get colorMapping() {

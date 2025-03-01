@@ -80,7 +80,7 @@ class PushFunnelComponent extends Component {
     get groupColumns() {
         return this.data.groupColumns.filter(
             function (c) {
-                if (c == this.dateColumn || c == this.colorColumn) {
+                if (c == this.data.dateColumn || c == this.colorColumn) {
                     return false
                 } else {
                     return true
