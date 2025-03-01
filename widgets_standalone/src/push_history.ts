@@ -97,7 +97,16 @@ class PushHistoryComponent extends Component {
     }
 
     @cached
-    get date() {
+    get minDate() {
+        try {
+            return agg(this.data.summarizedTable, op.min(this.data.dateColumn))
+        } catch (error) {
+            return null
+        }
+    }
+
+    @cached
+    get maxDate() {
         try {
             return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
@@ -116,7 +125,7 @@ class PushHistoryComponent extends Component {
     @cached
     get valueTable() {
         try {
-            if (this.date == null) {
+            if (this.maxDate == null) {
                 return null
             }
 
@@ -510,7 +519,8 @@ setComponentTemplate(
 				{{#unless this.editMode}}
 				<div class="widget-view">
 				  <div class="widget-date">{{dateHistoryFormatHelper
-					  this.date
+				  	  this.minDate
+					  this.maxDate
 					  this.display
 					}}</div>
 				  <div class="widget-title">{{this.title}}</div>
