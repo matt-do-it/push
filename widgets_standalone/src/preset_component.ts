@@ -16,7 +16,12 @@ class PresetComponent extends Component {
     @service data
 
     get presets() {
-        return this.preset.presets
+        return Object.keys(this.preset.presets).map(function(k) {
+        	return {
+        		name: k, 
+        		title: this.preset.presets[k].title || "Unbenannt"
+        	}
+        }.bind(this))
     }
 
     @action
@@ -31,7 +36,7 @@ setComponentTemplate(
     <h3>Datasets</h3>
     <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
     	{{#each this.presets as |preset|}}
-      		<li><a {{on "click" (fn this.loadPreset preset)}}>{{preset.title}}</a></li>
+      		<li><a {{on "click" (fn this.loadPreset preset.name)}}>{{preset.title}}</a></li>
     	{{/each}}
     </ul>
 
