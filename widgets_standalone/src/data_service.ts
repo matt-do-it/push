@@ -12,7 +12,7 @@ export default class DataService {
 
     @tracked groupColumns
 
-    @tracked dateColumn = "date";
+    @tracked dateColumn
 
     @tracked rollup
     @tracked derive
@@ -118,10 +118,10 @@ export default class DataService {
             return undefined
         }
         const firstValue = col.get(0)
-        if (firstValue.constructor.name === 'SignedBigNum') {
+        if (firstValue && firstValue.constructor && firstValue.constructor.name === 'SignedBigNum') {
             return 'number'
         }
-        if (typeof firstValue === 'object') {
+        if (firstValue && firstValue.constructor && typeof firstValue === 'object') {
             const objectClass: string = firstValue.constructor.name
             if (objectClass.includes('Array')) {
                 return 'array'
@@ -187,7 +187,8 @@ export default class DataService {
             if (
                 this.groupColumns == undefined ||
                 this.groupColumns.length == 0 ||
-                this.rollup == null
+                this.rollup == null ||
+                this.derive == null
             ) {
                 return this.filteredTable
             }

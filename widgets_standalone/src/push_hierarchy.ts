@@ -65,11 +65,6 @@ class PushHierarchyComponent extends Component {
     }
 
     @cached
-    get levels() {
-        return 2;
-    }
-
-    @cached
     get date() {
         try {
             return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
@@ -318,12 +313,9 @@ class PushHierarchyComponent extends Component {
         // Specify layout
         const treemapLayout = d3
             .treemap()
-            .tile(d3.treemapBinary)
+            .tile(d3.treemapSlice)
             .size([this.width, this.height])
             .round(true)
-            .paddingTop(80)
-            .paddingLeft(10)
-            .paddingRight(10)
 
         // Calculate layout for treemapData
         const root = treemapLayout(treemapData)
@@ -343,47 +335,31 @@ class PushHierarchyComponent extends Component {
         return this.dataSelectedRoot.ancestors().reverse()
     }
 
-	addChilds(relevantNodes, curNode, levelsLeft) {
-		relevantNodes.push(curNode);
-		if (curNode.children && levelsLeft > 0) {
-			curNode.children.forEach(function(e) {
-				this.addChilds(relevantNodes, e, levelsLeft - 1);
-			}.bind(this));
-		}
-	}
-
     @cached
     get animatedNodes() {
+        let displayIndices = this.displayColumns.map(
+            function (e) {
+                return this.groupColumns.indexOf(e)
+            }.bind(this)
+        )
+
         // Create the color scale.
         let color = d3.scaleOrdinal(this.colorDomain, this.colorRange)
 
-		
         let relevantNodes = []
 
-		let dataSelectedRoot = this.dataSelectedRoot
+        let ancestors = this.dataSelectedRoot.ancestors()
 
-		// Ancestors starts with current node, we only need real ancestors
-        let ancestors = dataSelectedRoot.ancestors()
-		ancestors.shift(); 
-		
-		// Add all childs of ancestors
         ancestors.reverse().forEach(function (e) {
-            relevantNodes = relevantNodes.concat(e)
-
             if (e.children) {
-                let children = e.children.filter(function (d) {
-                    return !ancestors.includes(d) && d != dataSelectedRoot;
+                let others = e.children.filter(function (d) {
+                    return true
                 })
 
-                relevantNodes = relevantNodes.concat(children)
+                relevantNodes = relevantNodes.concat(others)
             }
         })
-        		
-		// Add current node
-		relevantNodes = relevantNodes.concat([dataSelectedRoot])
-				
-		this.addChilds(relevantNodes, dataSelectedRoot, this.levels);
-		
+
         let mappedNodes = relevantNodes.map(
             function (d) {
                 let animated = {
@@ -393,10 +369,23 @@ class PushHierarchyComponent extends Component {
                     height: this.yMap(d.y1) - this.yMap(d.y0) - 2,
                     color: color(d.data.color),
                     formattedValue: valueFormatHelper([d.value, this.format]),
-                    texts: [d.data.name],
-                    root: d.depth == 0,
                     node: d,
                 }
+
+                let texts = []
+
+                let p = d.ancestors().reverse()
+
+                for (let i = 1; i < displayIndices.length; i++) {
+                    if (displayIndices[i] + 1 < p.length) {
+                        let t = p[displayIndices[i] + 1].data.name
+                        if (t) {
+                            texts.push(t)
+                        }
+                    }
+                }
+
+                animated['texts'] = texts
 
                 return animated
             }.bind(this)
@@ -431,20 +420,10 @@ class PushHierarchyComponent extends Component {
 
         this.animatedNodes.forEach(
             function (d, i) {
-            	if (d.root) {
-            		ctx.fillStyle = "grey"
-            	} else {
-	                ctx.fillStyle = d.color
-            	}
-            	
+                ctx.fillStyle = d.color
+
                 ctx.fillRect(d.x, d.y, d.width, d.height)
 
-				if (!d.root) {
-					ctx.strokeStyle = "white"
-					ctx.lineWidth = 1
-					ctx.strokeRect(d.x, d.y, d.width, d.height)
-				}
-				
                 let levels = 0
                 let texts = []
 
@@ -588,26 +567,26 @@ class PushHierarchyComponent extends Component {
         var x = (event.clientX - rect.left) * 2
         var y = (event.clientY - rect.top) * 2
 
-        let selectedElements = this.animatedNodes.filter(
+        let selectedElement = this.dataSelectedRoot.children.find(
             function (d) {
                 return (
-                    x >= d.x &&
-                    y >= d.y &&
-                    x <= d.x + d.width &&
-                    y <= d.y + d.height &&
-                    d.node.children && 
-                    d.node.children.length > 1
+                    x >= this.xMap(d.x0) &&
+                    y >= this.yMap(d.y0) &&
+                    x <= this.xMap(d.x1) &&
+                    y <= this.yMap(d.y1)
                 )
             }.bind(this)
         )
-        
-        let selectedElement = null
-        if (selectedElements.length > 0) {
-        	selectedElement = selectedElements[selectedElements.length - 1];
-            this.selectedNode = selectedElement.node
+
+        if (
+            selectedElement &&
+            selectedElement.children &&
+            selectedElement.children.length > 1
+        ) {
+            this.selectedNode = selectedElement
             this.shouldAnimate = true
         }
-		
+
         let backButton = 40
 
         if (

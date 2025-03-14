@@ -38,12 +38,18 @@ class PushHistoryComponent extends Component {
 
     @tracked editMode = false
 
-    get data() {
-        let applicationInstance = getOwner(this)
-
-        return applicationInstance.services[this.args.service || 'data']
+	@tracked data; 
+	
+    constructor(owner, args) {
+    	super(owner, args);
+    	    	
+		if (this.args.service) {
+			this.data = owner.services[this.args.service];
+		} else {
+			this.data = owner.services["data"];
+		}
     }
-
+	
     @cached
     get title() {
         return this._title || this.args.title
@@ -72,6 +78,11 @@ class PushHistoryComponent extends Component {
     }
 
     @cached
+    get valueColumn() {
+        return this._valueColumn || this.args.valueColumn || 'value'
+    }
+
+    @cached
     get format() {
         return this._format || this.args.format || 'number'
     }
@@ -91,17 +102,7 @@ class PushHistoryComponent extends Component {
         return this._mark || this.args.mark || 'bar'
     }
 
-    @cached
-    get minDate() {
-        try {
-            return agg(this.data.summarizedTable, op.min(this.data.dateColumn))
-        } catch (error) {
-            return null
-        }
-    }
-
-    @cached
-    get maxDate() {
+    get date() {
         try {
             return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
@@ -117,15 +118,11 @@ class PushHistoryComponent extends Component {
         }
     }
 
-    @cached
     get valueTable() {
         try {
-        console.log(this.data.summarizedTable);
-            if (this.maxDate == null) {
-                console.log("null");
+            if (this.date == null) {
                 return null
             }
-                console.log("not null");
 
             let valueTable = this.data.summarizedTable
 
@@ -176,15 +173,6 @@ class PushHistoryComponent extends Component {
     }
 
     @cached
-    get values() {
-        if (this.valueTable) {
-            return this.valueTable.objects()
-        } else {
-            return []
-        }
-    }
-
-    @cached
     get groupColumns() {
         return this.data.groupColumns.filter(
             function (c) {
@@ -197,8 +185,14 @@ class PushHistoryComponent extends Component {
         )
     }
 
+    get values() {
+        if (this.valueTable) {
+            return this.valueTable.objects()
+        } else {
+            return []
+        }
+    }
 
-    @cached
     get colorMapping() {
         const colorValues = [
             '#5EBD82',
@@ -518,8 +512,7 @@ setComponentTemplate(
 				{{#unless this.editMode}}
 				<div class="widget-view">
 				  <div class="widget-date">{{dateHistoryFormatHelper
-				  	  this.minDate
-					  this.maxDate
+					  this.date
 					  this.display
 					}}</div>
 				  <div class="widget-title">{{this.title}}</div>

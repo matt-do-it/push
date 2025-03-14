@@ -36,10 +36,16 @@ class PushHistogramComponent extends Component {
 
     @tracked editMode = false
 
-    get data() {
-        let applicationInstance = getOwner(this)
-
-        return applicationInstance.services[this.args.service || 'data']
+	@tracked data; 
+	
+    constructor(owner, args) {
+    	super(owner, args);
+    	    	
+		if (this.args.service) {
+			this.data = owner.services[this.args.service];
+		} else {
+			this.data = owner.services["data"];
+		}
     }
 
     get title() {
@@ -47,10 +53,9 @@ class PushHistogramComponent extends Component {
     }
 
     get valueColumns() {
-        if (this.args.valueColumns) {
-            return this.args.valueColumns
+        if (this.args.valueColumn) {
+            return [ this.args.valueColumn ];
         }
-
         let numberColumns = this.data.numberColumns
         let filteredNumberColumns = numberColumns.filter(function (c) {
             return !c.endsWith('Trend') && !c.endsWith('Previous')
@@ -86,7 +91,6 @@ class PushHistogramComponent extends Component {
         )
     }
 
-    @cached
     get date() {
         try {
             return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
@@ -105,7 +109,6 @@ class PushHistogramComponent extends Component {
         return this._display || this.args.display || 'isoweek'
     }
 
-    @cached
     get latestSummarizedTable() {
         try {
             if (this.date == null) {
@@ -126,7 +129,6 @@ class PushHistogramComponent extends Component {
                     .params(this.data.windowFilterParams)
                     .filter(this.data.windowFilter)
             }
-
             return totalTable
         } catch (error) {
             console.log('latestSummarizedTable failed: ' + error)
@@ -136,6 +138,7 @@ class PushHistogramComponent extends Component {
 
     get values() {
         if (this.latestSummarizedTable) {
+        console.log("got values");
             return this.latestSummarizedTable.objects()
         } else {
             return []
@@ -223,6 +226,7 @@ setComponentTemplate(
 							<div class="widget-canvas aspect-video w-full">
 								<div style="width: 100%; height: 100%"
 									{{vegaModifier column.spec}}>
+									
 								</div>
 							</div>
 							<div class="widget-additional text-xs">

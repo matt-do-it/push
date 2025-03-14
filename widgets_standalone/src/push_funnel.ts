@@ -7,6 +7,8 @@ import { cached } from '@glimmer/tracking'
 import { compile } from 'vega-lite'
 
 import valueFormatHelper, { numberFormatter } from './value_format_helper'
+import { formatFor } from './formats';
+
 import displayFormatHelper from './display_format_helper'
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
@@ -16,6 +18,8 @@ import dateFormatHelper from './date_format_helper'
 import vegaModifier from './vega_modifier'
 import InputComponent from './input_component'
 import TextareaComponent from './text_area'
+
+import vegaConfig from './vega_config'
 
 import {
     precompileTemplate,
@@ -27,22 +31,23 @@ import {
 import * as d3 from 'd3'
 
 class PushFunnelComponent extends Component {
-    @service data
+	@tracked data; 
+	
+    constructor(owner, args) {
+    	super(owner, args);
+    	    	
+		if (this.args.service) {
+			this.data = owner.services[this.args.service];
+		} else {
+			this.data = owner.services["data"];
+		}
+    }
 
-    @service dateCalc
-    @service formatter
-
-    @cached
     get title() {
         return this.args.title
     }
 
-    @cached
-    get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
-    }
-
-    @cached
+        
     get colorColumn() {
         if (this.args.colorColumn) {
             return this.args.colorColumn
@@ -59,10 +64,9 @@ class PushFunnelComponent extends Component {
         return null
     }
 
-    @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
@@ -76,7 +80,7 @@ class PushFunnelComponent extends Component {
         return this.args.format || 'number'
     }
 
-    @cached
+    
     get groupColumns() {
         return this.data.groupColumns.filter(
             function (c) {
@@ -89,11 +93,10 @@ class PushFunnelComponent extends Component {
         )
     }
 
-    @cached
     get valueTable() {
         try {
-            if (this.date == null) {
-                return null
+             if (this.date == null) {
+               return null
             }
 
             let valueTable = this.data.summarizedTable
@@ -101,7 +104,7 @@ class PushFunnelComponent extends Component {
             valueTable = valueTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
@@ -144,7 +147,7 @@ class PushFunnelComponent extends Component {
         }
     }
 
-    @cached
+    
     get values() {
         let valueTable = this.valueTable
 
@@ -212,11 +215,10 @@ class PushFunnelComponent extends Component {
             return e
         })
 
-        console.log(modifiedData)
         return modifiedData
     }
 
-    @cached
+    
     get groupTitleTransform() {
         if (this.titleColumn) {
             return {
@@ -228,17 +230,17 @@ class PushFunnelComponent extends Component {
         }
     }
 
-    @cached
+    
     get valueColumns() {
-        return this.args.valueColumns.split(',') || []
+        return this.args.valueColumns || []
     }
 
-    @cached
+    
     get phaseTitles() {
-        return this.args.phaseTitles.split(',') || []
+        return this.args.phaseTitles || []
     }
 
-    @cached
+    
     get colorMapping() {
         const colorValues = [
             '#5EBD82',
@@ -253,39 +255,61 @@ class PushFunnelComponent extends Component {
             '#71767C',
         ]
 
-        if (this.colorColumn && this.groupColumns.length > 0) {
+        if (this.groupColumns.length > 0) {
             let valueTable = this.valueTable
             if (valueTable != null) {
-                let colorMapping = valueTable
-                    .params({
-                        colorColumn: this.colorColumn,
-                        colorValues: colorValues,
-                    })
-                    .groupby('groupTitle')
-                    .rollup({
-                        range: (d, $) =>
-                            op.min(
-                                op.recode(
-                                    d[$.colorColumn] - 1,
-                                    $.colorValues,
-                                    '#5EBD82'
-                                )
-                            ),
-                        order: (d, $) => op.min(d[$.colorColumn]),
-                    })
-                    .rename({ groupTitle: 'domain' })
-                    .orderby('order')
-                    .reify()
+                if (this.colorColumn) {
+                    let colorMapping = valueTable
+                        .params({
+                            colorColumn: this.colorColumn,
+                            colorValues: colorValues,
+                        })
+                        .groupby('groupTitle')
+                        .rollup({
+                            range: (d, $) =>
+                                op.min(
+                                    op.recode(
+                                        d[$.colorColumn] - 1,
+                                        $.colorValues,
+                                        '#5EBD82'
+                                    )
+                                ),
+                            order: (d, $) => op.min(d[$.colorColumn]),
+                        })
+                        .rename({ groupTitle: 'domain' })
+                        .orderby('order')
+                        .reify()
 
-                return {
-                    domain: colorMapping.column('domain').data,
-                    range: colorMapping.column('range').data,
+                    return {
+                        domain: colorMapping.column('domain').data,
+                        range: colorMapping.column('range').data,
+                    }
+                } else {
+                    let colorMapping = valueTable
+                        .params({
+                            valueColumn: this.valueColumn,
+                        })
+                        .groupby('groupTitle')
+                        .rollup({})
+                        .rename({ groupTitle: 'domain' })
+                        .orderby('domain')
+                        .reify()
+
+                    let domains = colorMapping.column('domain').data
+
+                    let range = domains.map(function (e, i) {
+                        return colorValues[i % 10]
+                    })
+                    return {
+                        domain: domains,
+                        range: range,
+                    }
                 }
             }
         }
 
         return {
-            domain: ['', null],
+            domain: ['Gesamt'],
             range: ['#5EBD82', '#5EBD82'],
         }
     }
@@ -307,7 +331,7 @@ class PushFunnelComponent extends Component {
 
         this.data.groupColumns.forEach(
             function (e) {
-                if (e != this.colorColumn && e != this.dateColumn) {
+                if (e != this.colorColumn && e != this.data.dateColumn) {
                     tooltips.push({
                         field: e.replace(/\./, '\\.'),
                     })
@@ -322,7 +346,7 @@ class PushFunnelComponent extends Component {
         tooltips.push({
             field: 'value',
             type: 'quantitative',
-            format: this.formatter.numberFormat,
+            format: formatFor('number'),
         })
 
         return tooltips
@@ -401,7 +425,7 @@ class PushFunnelComponent extends Component {
         }
 
         const vegaSpec = compile(liteSpec, {
-            config: this.formatter.vegaConfig,
+            config: vegaConfig()
         }).spec
 
         return vegaSpec
@@ -415,7 +439,7 @@ setComponentTemplate(
 		<div class="widget-view">
 		  <div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
 		  <div class="widget-title">{{this.title}}</div>
-		  <div class="widget-canvas">
+		  <div class="widget-canvas aspect-video">
 			<div style="width: 100%; height: 100%" {{vegaModifier this.compiledVegaSpec}}>
 			</div>
 		  </div>

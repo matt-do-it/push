@@ -7,12 +7,12 @@ import DataService from './data_service'
 import DateCalcService from './date_service'
 
 import { renderComponent } from '@glimmerx/core'
-import PushHistogramComponent from './push_histogram'
+import PushBenchmarkComponent from './push_benchmark'
 
 import './style.css'
 
 const meta = {
-    title: 'Push/PushHistogram',
+    title: 'Push/PushBenchmark',
     tags: ['autodocs'],
     render: (args) => {
         let dataService = new DataService()
@@ -30,7 +30,7 @@ const meta = {
         dataService.windowFilter = args.windowFilter
 
         let element = document.createElement('div')
-        renderComponent(PushHistogramComponent, {
+        renderComponent(PushBenchmarkComponent, {
             element: element,
             args: args,
             services: {
@@ -41,10 +41,7 @@ const meta = {
     },
     argTypes: {
         title: { control: 'text', table: { category: 'Widget options' } },
-        valueColumns: {
-            control: 'object',
-            table: { category: 'Widget options' },
-        },
+        valueColumn: { control: 'text', table: { category: 'Widget options' } },
         display: {
             control: 'select',
             table: { category: 'Widget options' },
@@ -80,20 +77,20 @@ const meta = {
             },
         },
     },
-} satisfies Meta<PushHistogramProps>
+} satisfies Meta<PushBenchmarkProps>
 
 export default meta
-type Story = StoryObj<PushHistogramProps>
+type Story = StoryObj<PushBenchmarkProps>
 
 export const Default: Story = {
     args: {
         title: 'Title',
         dateColumn: 'date',
-        valueColumns: null,
+        valueColumn: 'value',
         display: 'isoquarter',
         format: 'number',
         filter: null,
-        groupColumns: ['date', 'group'],
+        groupColumns: ['date', 'group', 'group2'],
         rollup: { value: 'op.sum(d.value)' },
         derive: {},
         windowFilter: null,

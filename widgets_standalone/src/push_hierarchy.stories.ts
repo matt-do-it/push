@@ -4,10 +4,10 @@ import { fn } from '@storybook/test'
 import PresetService from './preset_service'
 
 import DataService from './data_service'
-
+import DateCalcService from './date_service'
 
 import { renderComponent } from '@glimmerx/core'
-import PushHerarchyComponent from './push_hierarchy'
+import PushHierarchyComponent from './push_hierarchy'
 
 import './style.css'
 
@@ -30,7 +30,7 @@ const meta = {
         dataService.windowFilter = args.windowFilter
 
         let element = document.createElement('div')
-        renderComponent(PushHerarchyComponent, {
+        renderComponent(PushHierarchyComponent, {
             element: element,
             args: args,
             services: {

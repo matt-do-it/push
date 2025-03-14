@@ -70,7 +70,7 @@ export default setModifierManager(
         }
 
         modify(args) {
-            const canvas = this.element.parentElement
+            const canvas = this.element
             let component = args.positional[0]
             component.drawCanvas(canvas)
         }

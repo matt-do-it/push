@@ -131,7 +131,7 @@ class PushValuesComponent extends Component {
                     axis: {
                         format: formatFor(this.format),
                     },
-                }
+                },
             },
         }
 
@@ -204,7 +204,7 @@ setComponentTemplate(
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
     		<div class="widget-title">{{this.title}}</div>
-    		<div class="widget-canvas-grid grid sm:grid-cols-2">
+    		<div class="widget-canvas-grid grid sm:grid-cols-3">
 	  			{{#each this.specs as |col|}}
 	  					<div class="widget-canvas aspect-video w-full" {{vegaModifier col}}>
 		    			</div>

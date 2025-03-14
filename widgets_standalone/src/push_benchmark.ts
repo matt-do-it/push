@@ -7,16 +7,21 @@ import { cached } from '@glimmer/tracking'
 import { compile } from 'vega-lite'
 
 import valueFormatHelper, { numberFormatter } from './value_format_helper'
+import { formatFor } from './formats';
 import displayFormatHelper from './display_format_helper'
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
 import trendFormatHelper from './trend_format_helper'
 import dateFormatHelper from './date_format_helper'
 import dateHistoryFormatHelper from './date_history_format_helper'
+import { previousDate } from './date_calc_util';
 
 import vegaModifier from './vega_modifier'
 import InputComponent from './input_component'
 import TextareaComponent from './text_area'
+
+import vegaConfig from './vega_config'
+
 
 import {
     precompileTemplate,
@@ -28,18 +33,20 @@ import {
 import * as d3 from 'd3'
 
 class PushBenchmarkComponent extends Component {
-    @service data
-
-    @service dateCalc
-    @service formatter
+	@tracked data; 
+	
+    constructor(owner, args) {
+    	super(owner, args);
+    	    	
+		if (this.args.service) {
+			this.data = owner.services[this.args.service];
+		} else {
+			this.data = owner.services["data"];
+		}
+    }
 
     get title() {
         return this.args.title
-    }
-
-    @cached
-    get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
     }
 
     @cached
@@ -60,13 +67,13 @@ class PushBenchmarkComponent extends Component {
     }
 
     get valueColumn() {
-        return this.args.valueColumn || 'costPerContact'
+        return this.args.valueColumn || 'value'
     }
 
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
@@ -86,7 +93,7 @@ class PushBenchmarkComponent extends Component {
     get groupColumns() {
         return this.data.groupColumns.filter(
             function (c) {
-                if (c == this.dateColumn || c == this.colorColumn) {
+                if (c == this.data.dateColumn || c == this.colorColumn) {
                     return false
                 } else {
                     return true
@@ -99,16 +106,14 @@ class PushBenchmarkComponent extends Component {
     get valueTable() {
         try {
             let dateCurrent = this.date
-            let datePrevious = this.dateCalc.previousDate(
-                this.date,
-                this.display,
-                1
-            )
+			let datePrevious = previousDate(this.date, this.display, 1);
 
-            let valueTable = this.data.summarizedTable.filter(function (d) {
+            let valueTable = this.data.summarizedTable
+            	.params({ valueColumn: this.args.valueColumn })
+            	.filter(function (d, $) {
                 return (
-                    d['costPerContact'] != null &&
-                    op.is_finite(d['costPerContact'])
+                    d[$.valueColumn] != null &&
+                    op.is_finite(d[$.valueColumn])
                 )
             })
 
@@ -196,13 +201,9 @@ class PushBenchmarkComponent extends Component {
     get tooltip() {
         var tooltips = []
 
-        tooltips.push({
-            field: 'displayDate',
-            type: 'temporal',
-        })
         this.data.groupColumns.forEach(
             function (e) {
-                if (e != this.colorColumn && e != this.dateColumn) {
+                if (e != this.colorColumn && e != this.data.dateColumn) {
                     tooltips.push({
                         field: e.replace(/\./, '\\.'),
                     })
@@ -213,7 +214,7 @@ class PushBenchmarkComponent extends Component {
         tooltips.push({
             field: this.valueColumn,
             type: 'quantitative',
-            format: this.formatter.formatFor(this.format),
+            format: formatFor(this.format),
         })
 
         return tooltips
@@ -227,18 +228,13 @@ class PushBenchmarkComponent extends Component {
             width: 'container',
             height: 'container',
             transform: [
-                {
-                    calculate:
-                        "timeOffset('day', toDate(datum.date), if(dayofyear(timeOffset('day', toDate(datum.date), 3))%7<5,6,-1))",
-                    as: 'displayDate',
-                },
             ],
             encoding: {
                 x: {
                     field: this.valueColumn,
                     type: 'quantitative',
                     axis: {
-                        format: this.formatter.formatFor(this.format),
+                        format: formatFor(this.format),
                     },
                 },
                 y: {
@@ -289,7 +285,7 @@ class PushBenchmarkComponent extends Component {
         }
 
         const vegaSpec = compile(liteSpec, {
-            config: this.formatter.vegaConfig,
+            config: vegaConfig(),
         }).spec
 
         return vegaSpec
@@ -306,7 +302,7 @@ setComponentTemplate(
 			  this.display
 			}}</div>
 		  <div class="widget-title">{{this.title}}</div>
-		  <div class="widget-canvas">
+		  <div class="widget-canvas aspect-video">
 			<div style="width: 100%; height: 100%" {{vegaModifier this.compiledVegaSpec}}>
 			</div>
 		  </div>

@@ -9,7 +9,7 @@
                 PresetService,
                 PushSummaryComponent,
                 PushHistoryComponent,
-                pushEmbed,
+                embed,
             } from './standalone.js'
 
             document.addEventListener('DOMContentLoaded', (event) => {
@@ -18,15 +18,15 @@
                 let presetService = new PresetService()
                 presetService.load(dataService, 'default')
 
-                dataService.groupColumns = ['date', 'group']
+                dataService.groupColumns = ['date']
                 dataService.rollup = { value: 'op.sum(d.value)' }
 
-                let componentDiv = pushEmbed(PushHistoryComponent, dataService, {
+                let totals = embed(PushHistoryComponent, dataService, {
                     title: 'Zusammenfassung',
                     benchmarkTitle: 'Groups',
                 })
-console.log(componentDiv);
-                document.getElementById('widget').appendChild(componentDiv)
+
+                document.getElementById('totals').appendChild(totals)
             })
         </script>
     </head>
@@ -37,7 +37,7 @@ console.log(componentDiv);
                     <h1 class="">Totals</h1>
                 </div>
                 <div class="grid grid-cols-1">
-                    <div id="widget"></div>
+                    <div id="totals"></div>
                 </div>
             </div>
         </div>

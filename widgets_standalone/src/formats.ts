@@ -1,3 +1,4 @@
+import { deDE } from 'date-fns/locale'
 import * as d3 from 'd3'
 
 let formats = {

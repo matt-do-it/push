@@ -30,7 +30,8 @@ class InputComponent extends Component {
 
 setComponentTemplate(
     precompileTemplate(
-        `<label class="form-control w-full max-w-xs">
+        `
+<label class="form-control w-full max-w-xs">
   <div class="label">
     <span class="label-text">{{@title}}</span>
   </div>

@@ -7,12 +7,12 @@ import DataService from './data_service'
 import DateCalcService from './date_service'
 
 import { renderComponent } from '@glimmerx/core'
-import PushHistogramComponent from './push_histogram'
+import PushFunnelComponent from './push_funnel'
 
 import './style.css'
 
 const meta = {
-    title: 'Push/PushHistogram',
+    title: 'Push/PushFunnel',
     tags: ['autodocs'],
     render: (args) => {
         let dataService = new DataService()
@@ -30,7 +30,7 @@ const meta = {
         dataService.windowFilter = args.windowFilter
 
         let element = document.createElement('div')
-        renderComponent(PushHistogramComponent, {
+        renderComponent(PushFunnelComponent, {
             element: element,
             args: args,
             services: {
@@ -41,10 +41,7 @@ const meta = {
     },
     argTypes: {
         title: { control: 'text', table: { category: 'Widget options' } },
-        valueColumns: {
-            control: 'object',
-            table: { category: 'Widget options' },
-        },
+        valueColumn: { control: 'text', table: { category: 'Widget options' } },
         display: {
             control: 'select',
             table: { category: 'Widget options' },
@@ -80,16 +77,17 @@ const meta = {
             },
         },
     },
-} satisfies Meta<PushHistogramProps>
+} satisfies Meta<PushFunnelProps>
 
 export default meta
-type Story = StoryObj<PushHistogramProps>
+type Story = StoryObj<PushFunnelProps>
 
 export const Default: Story = {
     args: {
         title: 'Title',
         dateColumn: 'date',
-        valueColumns: null,
+        phaseTitles: ['Value 1', 'Value 2'],
+        valueColumns: ['value', 'value2'],
         display: 'isoquarter',
         format: 'number',
         filter: null,
