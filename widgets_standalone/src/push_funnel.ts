@@ -7,7 +7,7 @@ import { cached } from '@glimmer/tracking'
 import { compile } from 'vega-lite'
 
 import valueFormatHelper, { numberFormatter } from './value_format_helper'
-import { formatFor } from './formats';
+import { formatFor } from './formats'
 
 import displayFormatHelper from './display_format_helper'
 import canvasModifier from './canvas_modifier'
@@ -31,23 +31,22 @@ import {
 import * as d3 from 'd3'
 
 class PushFunnelComponent extends Component {
-	@tracked data; 
-	
+    @tracked data
+
     constructor(owner, args) {
-    	super(owner, args);
-    	    	
-		if (this.args.service) {
-			this.data = owner.services[this.args.service];
-		} else {
-			this.data = owner.services["data"];
-		}
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
     }
 
     get title() {
         return this.args.title
     }
 
-        
     get colorColumn() {
         if (this.args.colorColumn) {
             return this.args.colorColumn
@@ -80,7 +79,6 @@ class PushFunnelComponent extends Component {
         return this.args.format || 'number'
     }
 
-    
     get groupColumns() {
         return this.data.groupColumns.filter(
             function (c) {
@@ -95,8 +93,8 @@ class PushFunnelComponent extends Component {
 
     get valueTable() {
         try {
-             if (this.date == null) {
-               return null
+            if (this.date == null) {
+                return null
             }
 
             let valueTable = this.data.summarizedTable
@@ -147,7 +145,6 @@ class PushFunnelComponent extends Component {
         }
     }
 
-    
     get values() {
         let valueTable = this.valueTable
 
@@ -218,7 +215,6 @@ class PushFunnelComponent extends Component {
         return modifiedData
     }
 
-    
     get groupTitleTransform() {
         if (this.titleColumn) {
             return {
@@ -230,17 +226,14 @@ class PushFunnelComponent extends Component {
         }
     }
 
-    
     get valueColumns() {
         return this.args.valueColumns || []
     }
 
-    
     get phaseTitles() {
         return this.args.phaseTitles || []
     }
 
-    
     get colorMapping() {
         const colorValues = [
             '#5EBD82',
@@ -425,7 +418,7 @@ class PushFunnelComponent extends Component {
         }
 
         const vegaSpec = compile(liteSpec, {
-            config: vegaConfig()
+            config: vegaConfig(),
         }).spec
 
         return vegaSpec

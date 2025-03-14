@@ -36,16 +36,16 @@ class PushHistogramComponent extends Component {
 
     @tracked editMode = false
 
-	@tracked data; 
-	
+    @tracked data
+
     constructor(owner, args) {
-    	super(owner, args);
-    	    	
-		if (this.args.service) {
-			this.data = owner.services[this.args.service];
-		} else {
-			this.data = owner.services["data"];
-		}
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
     }
 
     get title() {
@@ -54,7 +54,7 @@ class PushHistogramComponent extends Component {
 
     get valueColumns() {
         if (this.args.valueColumn) {
-            return [ this.args.valueColumn ];
+            return [this.args.valueColumn]
         }
         let numberColumns = this.data.numberColumns
         let filteredNumberColumns = numberColumns.filter(function (c) {
@@ -138,7 +138,7 @@ class PushHistogramComponent extends Component {
 
     get values() {
         if (this.latestSummarizedTable) {
-        console.log("got values");
+            console.log('got values')
             return this.latestSummarizedTable.objects()
         } else {
             return []

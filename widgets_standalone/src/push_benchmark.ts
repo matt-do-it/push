@@ -6,22 +6,21 @@ import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 import { compile } from 'vega-lite'
 
-import valueFormatHelper, { numberFormatter } from './value_format_helper'
-import { formatFor } from './formats';
-import displayFormatHelper from './display_format_helper'
+import valueFormatHelper, { availableFormats } from './value_format_helper'
+import { formatFor } from './formats'
+import displayFormatHelper, { availableDisplays } from './display_format_helper'
 import canvasModifier from './canvas_modifier'
 import trendColorHelper from './trend_color_helper'
 import trendFormatHelper from './trend_format_helper'
 import dateFormatHelper from './date_format_helper'
 import dateHistoryFormatHelper from './date_history_format_helper'
-import { previousDate } from './date_calc_util';
+import { previousDate } from './date_calc_util'
 
 import vegaModifier from './vega_modifier'
 import InputComponent from './input_component'
-import TextareaComponent from './text_area'
+import SelectComponent from './select_component'
 
 import vegaConfig from './vega_config'
-
 
 import {
     precompileTemplate,
@@ -33,20 +32,28 @@ import {
 import * as d3 from 'd3'
 
 class PushBenchmarkComponent extends Component {
-	@tracked data; 
-	
+    @tracked _title
+    @tracked _valueColumn
+    @tracked _format
+    @tracked _display
+
+    @tracked editMode = false
+
+    @tracked data
+
     constructor(owner, args) {
-    	super(owner, args);
-    	    	
-		if (this.args.service) {
-			this.data = owner.services[this.args.service];
-		} else {
-			this.data = owner.services["data"];
-		}
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
     }
 
+    @cached
     get title() {
-        return this.args.title
+        return this._title || this.args.title
     }
 
     @cached
@@ -66,8 +73,19 @@ class PushBenchmarkComponent extends Component {
         return null
     }
 
+    @cached
     get valueColumn() {
-        return this.args.valueColumn || 'value'
+        return this._valueColumn || this.args.valueColumn || 'value'
+    }
+
+    @cached
+    get format() {
+        return this._format || this.args.format || 'number'
+    }
+
+    @cached
+    get display() {
+        return this._display || this.args.display || 'isoweek'
     }
 
     @cached
@@ -77,16 +95,6 @@ class PushBenchmarkComponent extends Component {
         } catch (error) {
             return null
         }
-    }
-
-    @cached
-    get display() {
-        return this.args.display || 'isoweek'
-    }
-
-    @cached
-    get format() {
-        return this.args.format || 'number'
     }
 
     @cached
@@ -106,16 +114,16 @@ class PushBenchmarkComponent extends Component {
     get valueTable() {
         try {
             let dateCurrent = this.date
-			let datePrevious = previousDate(this.date, this.display, 1);
+            let datePrevious = previousDate(this.date, this.display, 1)
 
             let valueTable = this.data.summarizedTable
-            	.params({ valueColumn: this.args.valueColumn })
-            	.filter(function (d, $) {
-                return (
-                    d[$.valueColumn] != null &&
-                    op.is_finite(d[$.valueColumn])
-                )
-            })
+                .params({ valueColumn: this.valueColumn })
+                .filter(function (d, $) {
+                    return (
+                        d[$.valueColumn] != null &&
+                        op.is_finite(d[$.valueColumn])
+                    )
+                })
 
             if (this.date) {
                 valueTable = valueTable
@@ -181,11 +189,6 @@ class PushBenchmarkComponent extends Component {
         }
     }
 
-    @cached
-    get valueColumn() {
-        return this.args.valueColumn
-    }
-
     get vegaTimeUnit() {
         if (this.display == 'isoyear') {
             return 'year'
@@ -227,8 +230,7 @@ class PushBenchmarkComponent extends Component {
             data: { values: this.values },
             width: 'container',
             height: 'container',
-            transform: [
-            ],
+            transform: [],
             encoding: {
                 x: {
                     field: this.valueColumn,
@@ -290,22 +292,103 @@ class PushBenchmarkComponent extends Component {
 
         return vegaSpec
     }
+
+    get availableFormats() {
+        return availableFormats
+    }
+
+    get availableDisplays() {
+        return availableDisplays
+    }
+
+    get availableNumberColumns() {
+        return this.data.numberColumns
+    }
+
+    @action
+    updateTitle(input) {
+        try {
+            this._title = input
+        } catch (error) {
+            this._title = null
+        }
+    }
+
+    @action
+    updateValueColumn(input) {
+        try {
+            this._valueColumn = input
+        } catch (error) {
+            this._valueColumn = null
+        }
+    }
+
+    @action
+    updateDisplay(input) {
+        try {
+            this._display = input
+        } catch (error) {
+            this._display = null
+        }
+    }
+
+    @action
+    updateFormat(input) {
+        try {
+            this._format = input
+        } catch (error) {
+            this._format = null
+        }
+    }
+
+    @action
+    toggleEditMode() {
+        this.editMode = !this.editMode
+    }
 }
 
 setComponentTemplate(
     precompileTemplate(
         `
-      <div class="push widget">
-		<div class="widget-view">
-		  <div class="widget-date">{{dateFormatHelper
-			  this.date
-			  this.display
-			}}</div>
-		  <div class="widget-title">{{this.title}}</div>
-		  <div class="widget-canvas aspect-video">
-			<div style="width: 100%; height: 100%" {{vegaModifier this.compiledVegaSpec}}>
+    <div class="push">
+    	<div class="widget">
+			{{#unless this.editMode}}
+			<div class="widget-view">
+				<div class="widget-date">{{dateFormatHelper
+				  this.date
+				  this.display
+				}}</div>
+			  	<div class="widget-title">{{this.title}}</div>
+			  	<div class="widget-canvas aspect-video">
+					<div style="width: 100%; height: 100%" {{vegaModifier this.compiledVegaSpec}}></div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
+				</div>
 			</div>
-		  </div>
+			{{/unless}}
+			{{#if this.editMode}}
+			<div class="widget-edit">
+				<div class="widget-edit-title">Bearbeiten</div>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div class="field">
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Value column" @value={{this.valueColumn}} @options={{this.availableNumberColumns}} @onInput={{this.updateValueColumn}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Format" @value={{this.format}} @options={{this.availableFormats}} @onInput={{this.updateFormat}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Display" @value={{this.display}} @options={{this.availableDisplays}} @onInput={{this.updateDisplay}}/>
+					</div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
+				</div>
+			</div>
+			{{/if}}
 		</div>  	
 	</div>
     `,
@@ -324,6 +407,7 @@ setComponentTemplate(
                 dateFormatHelper,
 
                 InputComponent,
+                SelectComponent,
             },
         }
     ),

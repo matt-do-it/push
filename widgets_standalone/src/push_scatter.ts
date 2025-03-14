@@ -29,17 +29,23 @@ const formatDisplay = helper(([name], { greeting }) => {
 })
 
 class PushScatterComponent extends Component {
+    @tracked data
+
+    constructor(owner, args) {
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
+    }
+
     @tracked _title
     @tracked _format
     @tracked _display
 
     @tracked editMode
-
-    get data() {
-        let applicationInstance = getOwner(this)
-
-        return applicationInstance.services[this.args.service || 'data']
-    }
 
     get title() {
         return this._title || this.args.title

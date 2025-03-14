@@ -118,10 +118,18 @@ export default class DataService {
             return undefined
         }
         const firstValue = col.get(0)
-        if (firstValue && firstValue.constructor && firstValue.constructor.name === 'SignedBigNum') {
+        if (
+            firstValue &&
+            firstValue.constructor &&
+            firstValue.constructor.name === 'SignedBigNum'
+        ) {
             return 'number'
         }
-        if (firstValue && firstValue.constructor && typeof firstValue === 'object') {
+        if (
+            firstValue &&
+            firstValue.constructor &&
+            typeof firstValue === 'object'
+        ) {
             const objectClass: string = firstValue.constructor.name
             if (objectClass.includes('Array')) {
                 return 'array'

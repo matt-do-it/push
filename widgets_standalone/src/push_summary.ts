@@ -35,16 +35,16 @@ class PushSummaryComponent extends Component {
 
     @tracked editMode = false
 
-	@tracked data; 
-	
+    @tracked data
+
     constructor(owner, args) {
-    	super(owner, args);
-    	    	
-		if (this.args.service) {
-			this.data = owner.services[this.args.service];
-		} else {
-			this.data = owner.services["data"];
-		}
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
     }
 
     get title() {

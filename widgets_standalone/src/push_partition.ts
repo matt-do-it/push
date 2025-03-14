@@ -26,8 +26,17 @@ import {
 import * as d3 from 'd3'
 
 class PushPartitionComponent extends Component {
-    @service data
-    @service dateCalc
+    @tracked data
+
+    constructor(owner, args) {
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
+    }
 
     @tracked _dateColumn
     @tracked _valueColumn

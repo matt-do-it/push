@@ -31,18 +31,24 @@ const formatDisplay = helper(([name], { greeting }) => {
 })
 
 class PushValuesComponent extends Component {
+    @tracked data
+
+    constructor(owner, args) {
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
+    }
+
     @tracked _title
     @tracked _valueColumn
     @tracked _format
     @tracked _display
 
     @tracked editMode
-
-    get data() {
-        let applicationInstance = getOwner(this)
-
-        return applicationInstance.services[this.args.service || 'data']
-    }
 
     get title() {
         return this._title || this.args.title
@@ -204,7 +210,7 @@ setComponentTemplate(
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
     		<div class="widget-title">{{this.title}}</div>
-    		<div class="widget-canvas-grid grid sm:grid-cols-3">
+    		<div class="widget-canvas-grid grid sm:grid-cols-2">
 	  			{{#each this.specs as |col|}}
 	  					<div class="widget-canvas aspect-video w-full" {{vegaModifier col}}>
 		    			</div>

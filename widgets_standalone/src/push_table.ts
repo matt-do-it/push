@@ -28,30 +28,16 @@ import {
 } from '@glimmer/core'
 
 class PushTableComponent extends Component {
-    @tracked currentPage = 1
-
-    @tracked offset = 0
-    @tracked limit = 10
-    @tracked search = ''
-
-    @tracked sortColumn = null
-    @tracked sortAscending = false
-
-    @tracked editMode = false
-
-    @tracked _title
-
-    get data() {
-        if (this.args.service) {
-            return getOwner(this).services[this.args.service]
-        } else {
-            return getOwner(this).services.data
-        }
-    }
+    @tracked data
 
     constructor(owner, args) {
         super(owner, args)
 
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
         if (this.args.offset) {
             this.offset = parseInt(this.args.offset)
         }
@@ -68,6 +54,20 @@ class PushTableComponent extends Component {
             }
         }
     }
+
+
+    @tracked currentPage = 1
+
+    @tracked offset = 0
+    @tracked limit = 10
+    @tracked search = ''
+
+    @tracked sortColumn = null
+    @tracked sortAscending = false
+
+    @tracked editMode = false
+
+    @tracked _title
 
     get title() {
         return this._title || this.args.title

@@ -38,18 +38,18 @@ class PushHistoryComponent extends Component {
 
     @tracked editMode = false
 
-	@tracked data; 
-	
+    @tracked data
+
     constructor(owner, args) {
-    	super(owner, args);
-    	    	
-		if (this.args.service) {
-			this.data = owner.services[this.args.service];
-		} else {
-			this.data = owner.services["data"];
-		}
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
     }
-	
+
     @cached
     get title() {
         return this._title || this.args.title
@@ -70,11 +70,6 @@ class PushHistoryComponent extends Component {
         }
 
         return null
-    }
-
-    @cached
-    get valueColumn() {
-        return this._valueColumn || this.args.valueColumn || 'value'
     }
 
     @cached

@@ -6,10 +6,13 @@ import { helper } from '@glimmerx/helper'
 import { cached } from '@glimmer/tracking'
 
 import vegaModifier from './vega_modifier'
+
 import dateFormatHelper from './date_format_helper'
+import valueFormatHelper, { availableFormats } from './value_format_helper'
+import displayFormatHelper, { availableDisplays } from './display_format_helper'
 
 import InputComponent from './input_component'
-import TextareaComponent from './text_area'
+import SelectComponent from './select_component'
 
 import {
     precompileTemplate,
@@ -23,31 +26,55 @@ const formatDisplay = helper(([name], { greeting }) => {
 })
 
 class PushDeviationComponent extends Component {
-    @service data
+    @tracked data
 
-    @tracked _dateColumn
+    constructor(owner, args) {
+        super(owner, args)
+
+        if (this.args.service) {
+            this.data = owner.services[this.args.service]
+        } else {
+            this.data = owner.services['data']
+        }
+    }
+
+    @tracked _title
+    @tracked _format
+    @tracked _display
+
     @tracked _valueColumn
     @tracked _columns
 
     @tracked editMode
 
-    get values() {
-        return this.latestFilteredTable.objects()
-    }
-
-    get dateColumn() {
-        return this._dateColumn || this.args.dateColumn || 'date'
+    @cached
+    get title() {
+        return this._title || this.args.title
     }
 
     @cached
     get valueColumn() {
-        return this._valueColumn || this.args.valueColumn || 'impressions'
+        return this._valueColumn || this.args.valueColumn || 'value'
+    }
+
+    @cached
+    get format() {
+        return this._format || this.args.format || 'number'
+    }
+
+    @cached
+    get display() {
+        return this._display || this.args.display || 'isoweek'
+    }
+
+    get values() {
+        return this.latestFilteredTable.objects()
     }
 
     @cached
     get date() {
         try {
-            return agg(this.data.summarizedTable, op.max(this.dateColumn))
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
         } catch (error) {
             return null
         }
@@ -73,7 +100,7 @@ class PushDeviationComponent extends Component {
             totalTable = totalTable
                 .params({
                     dateSet: [this.date],
-                    dateColumn: this.dateColumn,
+                    dateColumn: this.data.dateColumn,
                 })
                 .filter((d, $) => op.includes($.dateSet, d[$.dateColumn]))
 
@@ -96,8 +123,8 @@ class PushDeviationComponent extends Component {
 
     vegaSpec(column) {
         return {
-            width: 200,
-            height: 200,
+            width: 'container',
+            height: 'container',
             data: {
                 values: this.values,
             },
@@ -151,6 +178,45 @@ class PushDeviationComponent extends Component {
         }
     }
 
+    get availableFormats() {
+        return availableFormats
+    }
+
+    get availableDisplays() {
+        return availableDisplays
+    }
+
+    get availableNumberColumns() {
+        return this.data.numberColumns
+    }
+
+    @action
+    updateTitle(input) {
+        try {
+            this._title = input
+        } catch (error) {
+            this._title = null
+        }
+    }
+
+    @action
+    updateDisplay(input) {
+        try {
+            this._display = input
+        } catch (error) {
+            this._display = null
+        }
+    }
+
+    @action
+    updateFormat(input) {
+        try {
+            this._format = input
+        } catch (error) {
+            this._format = null
+        }
+    }
+
     @action
     toggleEditMode() {
         this.editMode = !this.editMode
@@ -165,14 +231,44 @@ setComponentTemplate(
       	<div class="widget-view">
 			<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
     		<div class="widget-title">Values</div>
+    		<div class="widget-canvas-grid flex flex-row justify-stretch">
   			{{#each this.specs as |col|}}
-    			<div class="render" {{vegaModifier col}}></div>
+  				<div class="flex flex-col flex-auto flex-auto w-10 overflow-hidden">
+					<div class="widget-canvas aspect-video w-full">
+						<div style="width: 100%; height: 100%"
+							{{vegaModifier col}}>
+						</div>
+					</div>
+				</div>
     		{{/each}}
+    		</div>
 			<div class="widget-toggle">
-				<button class="btn btn-xs btn-outline btn-info" {{on "click" this.toggleEditMode}}>ℹ</button>
+				<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
 			</div>
     	</div>
 		{{/unless}}
+			{{#if this.editMode}}
+			<div class="widget-edit">
+				<div class="widget-edit-title">Bearbeiten</div>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div class="field">
+						<InputComponent @title="Title" @value={{this.title}} @onInput={{this.updateTitle}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Value column" @value={{this.valueColumn}} @options={{this.availableNumberColumns}} @onInput={{this.updateValueColumn}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Format" @value={{this.format}} @options={{this.availableFormats}} @onInput={{this.updateFormat}}/>
+					</div>
+					<div class="field">
+						<SelectComponent @title="Display" @value={{this.display}} @options={{this.availableDisplays}} @onInput={{this.updateDisplay}}/>
+					</div>
+				</div>
+				<div class="widget-toggle">
+					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>✕</button>
+				</div>
+			</div>
+			{{/if}}
   	</div>
     `,
         {
@@ -183,6 +279,7 @@ setComponentTemplate(
                 dateFormatHelper,
                 vegaModifier,
                 InputComponent,
+                SelectComponent,
             },
         }
     ),
