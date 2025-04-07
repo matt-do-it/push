@@ -29,45 +29,48 @@ import * as d3 from 'd3'
 
 const dateFormatter = d3.utcFormat('%d.%m.%Y')
 
-export default helper(([date, display]) => {
-    if (!date) {
+export default helper(([startDate, endDate, display]) => {
+    if (!startDate || !endDate) {
         return 'NA'
     }
 
-    const parsedDate = new Date(Date.parse(date))
+    const parsedStartDate = new Date(Date.parse(startDate))
+    const parsedEndDate = new Date(Date.parse(endDate))
 
-    if (!parsedDate) {
+    if (!parsedStartDate) {
         return 'NA'
     }
 
     if (display == 'isoyear') {
-        let startDate = startDateForHistory(parsedDate, display)
-        let endDate = sub(addISOYears(parsedDate, 1), { days: 1 })
+        let startDate = parsedStartDate;
+        let endDate = sub(addISOWeeks(parsedEndDate, 1), { days: 1 })
         return formatDateHuman(startDate) + ' - ' + formatDateHuman(endDate)
     }
+    
     if (display == 'isoquarter') {
-        let startDate = startDateForHistory(parsedDate, display)
-        let endDate = sub(addISOQuarters(parsedDate, 1), { days: 1 })
+        let startDate = parsedStartDate;
+        let endDate = sub(addISOWeeks(parsedEndDate, 1), { days: 1 })
         return (
             formatDateHuman(startDate) +
             ' - ' +
             formatDateHuman(endDate) +
             ' (' +
             'Q' +
-            (Math.floor(getISOWeek(parsedDate) / 13) + 1) +
+            (Math.floor(getISOWeek(parsedEndDate) / 13) + 1) +
             ')'
         )
     }
+    
     if (display == 'isoweek') {
-        let startDate = startDateForHistory(parsedDate, display)
-        let endDate = sub(addISOWeeks(parsedDate, 1), { days: 1 })
+        let startDate = parsedStartDate;
+        let endDate = sub(addISOWeeks(parsedEndDate, 1), { days: 1 })
         return (
             formatDateHuman(startDate) +
             ' - ' +
             formatDateHuman(endDate) +
             ' (' +
             'W' +
-            getISOWeek(endDate) +
+            getISOWeek(parsedEndDate) +
             ')'
         )
     }

@@ -280,7 +280,12 @@ class PushSummaryComponent extends Component {
                 .groupby(this.data.dateColumn)
                 .rollup({
                     value: op.median(this.valueColumn),
-                })
+                    count: op.count()
+                });
+            
+            if (rolledupTable.numRows() != 3) {
+            	return null;
+            }
 
             return agg(rolledupTable, op.mean('value'))
         } else {
@@ -455,7 +460,6 @@ class PushSummaryComponent extends Component {
 setComponentTemplate(
     precompileTemplate(
         `
-      <div class="push">
 		  <div class="widget">
 			{{#unless this.editMode}}
 			<div class="widget-view">
@@ -466,16 +470,24 @@ setComponentTemplate(
 					<canvas {{canvasModifier this}}></canvas>
 				</div>	
 				<div class="widget-benchmark">
+						{{this.benchmarkTitle}}
 						Q25: {{valueFormatHelper this.q25 this.format}}
 						- 
 						M: {{valueFormatHelper this.median this.format}}
 						- 
 						Q75: {{valueFormatHelper this.q75 this.format}}
 				</div>
+				{{#if @showTrend}}
 				<div class="widget-trend">
 					<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}}</div>
 					<div class="right {{trendColorHelper this.trend}}">{{trendFormatHelper this.trend}}</div>
 				</div>
+				{{else}}
+				<div class="widget-trend">
+					<div class="left">&nbsp;</div>
+					<div class="right">&nbsp;</div>
+				</div>
+				{{/if}}
 				<div class="widget-toggle">
 					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
 				</div>
@@ -504,7 +516,6 @@ setComponentTemplate(
 			</div>
 			{{/if}}
 		</div>
-  	</div>
     `,
         {
             strictMode: true,

@@ -3,6 +3,15 @@
 @tailwind utilities;
 
 .widget {
+	@apply bg-inherit; 
+}
+
+.widget .widget-toggle {
+	display: none; 
+}
+
+.push-editable .widget .widget-toggle {
+	display: block; 
 }
 
 .widget-view {

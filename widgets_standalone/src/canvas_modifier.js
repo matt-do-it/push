@@ -29,9 +29,7 @@ export default setModifierManager(
         install(args) {
             this.resizeObserver = new ResizeObserver(
                 function (entries) {
-                    console.log('triggerd')
                     for (const entry of entries) {
-                        console.log('triggerd elm')
                         if (entry.contentRect) {
                             if (
                                 entry.contentRect.width > 0 &&

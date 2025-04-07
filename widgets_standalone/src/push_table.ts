@@ -355,12 +355,12 @@ class PushTableComponent extends Component {
 setComponentTemplate(
     precompileTemplate(
         `
-        <div class="push widget">
+        <div class="widget h-full">
 			{{#unless this.editMode}}
-        	<div class="widget-view">
+        	<div class="widget-view flex flex-col h-full">
   				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
   				<div class="widget-title">{{this.title}}</div>
-				  <table class="table table-fixed border border-solid border-slate-100 rounded-md flex-grow">
+				  <table class="table table-fixed rounded-md flex-grow">
 					<thead>
 					  <tr>
 						{{#each this.columns as |column|}}

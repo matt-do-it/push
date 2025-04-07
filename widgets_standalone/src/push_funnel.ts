@@ -227,11 +227,11 @@ class PushFunnelComponent extends Component {
     }
 
     get valueColumns() {
-        return this.args.valueColumns || []
+        return this.args.valueColumns.split(",") || []
     }
 
     get phaseTitles() {
-        return this.args.phaseTitles || []
+        return this.args.phaseTitles.split(",") || []
     }
 
     get colorMapping() {
@@ -428,7 +428,7 @@ class PushFunnelComponent extends Component {
 setComponentTemplate(
     precompileTemplate(
         `
-      <div class="push widget">
+      <div class="widget">
 		<div class="widget-view">
 		  <div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
 		  <div class="widget-title">{{this.title}}</div>

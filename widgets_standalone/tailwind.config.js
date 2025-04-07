@@ -14,6 +14,9 @@ module.exports = {
                 base: ['16px', '24px'],
                 '4xl': ['36px', '40px'],
             },
+            fontFamily: {
+            	"sans": ["Arial", "Helvetica Neue", "sans-serif"]
+            }
         },
     },
     daisyui: {

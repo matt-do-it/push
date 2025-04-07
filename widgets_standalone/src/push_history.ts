@@ -105,6 +105,22 @@ class PushHistoryComponent extends Component {
         }
     }
 
+    get start_date() {
+        try {
+            return agg(this.data.summarizedTable, op.min(this.data.dateColumn))
+        } catch (error) {
+            return null
+        }
+    }
+
+    get end_date() {
+        try {
+            return agg(this.data.summarizedTable, op.max(this.data.dateColumn))
+        } catch (error) {
+            return null
+        }
+    }
+
     get legendTitle() {
         if (this.groupColumns.length > 0) {
             return this.groupColumns[0]
@@ -502,12 +518,12 @@ class PushHistoryComponent extends Component {
 setComponentTemplate(
     precompileTemplate(
         `
-		<div class="push">
 		  	<div class="widget">
 				{{#unless this.editMode}}
 				<div class="widget-view">
 				  <div class="widget-date">{{dateHistoryFormatHelper
-					  this.date
+					  this.start_date
+					  this.end_date
 					  this.display
 					}}</div>
 				  <div class="widget-title">{{this.title}}</div>
@@ -546,7 +562,6 @@ setComponentTemplate(
 			</div>
 			{{/if}}
 		</div>
-	</div>
     `,
         {
             strictMode: true,

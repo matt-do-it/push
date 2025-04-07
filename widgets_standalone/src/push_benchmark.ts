@@ -350,7 +350,6 @@ class PushBenchmarkComponent extends Component {
 setComponentTemplate(
     precompileTemplate(
         `
-    <div class="push">
     	<div class="widget">
 			{{#unless this.editMode}}
 			<div class="widget-view">
@@ -390,7 +389,6 @@ setComponentTemplate(
 			</div>
 			{{/if}}
 		</div>  	
-	</div>
     `,
         {
             strictMode: true,
