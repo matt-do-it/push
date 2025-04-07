@@ -30,6 +30,8 @@ const meta = {
         dataService.windowFilter = args.windowFilter
 
         let element = document.createElement('div')
+        element.classList.add("push");
+        element.classList.add("push-editable");
         renderComponent(PushBenchmarkComponent, {
             element: element,
             args: args,
