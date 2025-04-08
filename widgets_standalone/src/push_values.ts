@@ -243,8 +243,7 @@ setComponentTemplate(
 				</div>
 			</div>
 			{{/if}}
-
-  	</div>
+  		</div>
     `,
         {
             strictMode: true,

@@ -45,3 +45,5 @@ export function previousDate(stringDate, display, periods) {
 
     return previousDate.format('YYYY-MM-DD')
 }
+
+

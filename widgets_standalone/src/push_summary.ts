@@ -469,6 +469,7 @@ setComponentTemplate(
 				<div class="widget-canvas" style="height: 40px">
 					<canvas {{canvasModifier this}}></canvas>
 				</div>	
+				{{#if this.showBenchmark}}
 				<div class="widget-benchmark">
 						{{this.benchmarkTitle}}
 						Q25: {{valueFormatHelper this.q25 this.format}}
@@ -477,17 +478,11 @@ setComponentTemplate(
 						- 
 						Q75: {{valueFormatHelper this.q75 this.format}}
 				</div>
-				{{#if @showTrend}}
+				{{/if}}
 				<div class="widget-trend">
 					<div class="left">⌀ drei {{displayFormatHelper this.display}}: {{valueFormatHelper this.comparison this.format}}</div>
 					<div class="right {{trendColorHelper this.trend}}">{{trendFormatHelper this.trend}}</div>
 				</div>
-				{{else}}
-				<div class="widget-trend">
-					<div class="left">&nbsp;</div>
-					<div class="right">&nbsp;</div>
-				</div>
-				{{/if}}
 				<div class="widget-toggle">
 					<button class="btn btn-xs btn-circle" {{on "click" this.toggleEditMode}}>ℹ</button>
 				</div>

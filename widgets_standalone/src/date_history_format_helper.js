@@ -37,32 +37,30 @@ export default helper(([startDate, endDate, display]) => {
     const parsedStartDate = new Date(Date.parse(startDate))
     const parsedEndDate = new Date(Date.parse(endDate))
 
-    if (!parsedStartDate) {
+    if (!parsedStartDate || !parsedEndDate) {
         return 'NA'
     }
 
     if (display == 'isoyear') {
-        let startDate = parsedStartDate;
-        let endDate = sub(addISOWeeks(parsedEndDate, 1), { days: 1 })
+        let startDate = parsedStartDate
+        let endDate = sub(addISOYears(parsedEndDate, 1), { days: 1 })
         return formatDateHuman(startDate) + ' - ' + formatDateHuman(endDate)
     }
-    
     if (display == 'isoquarter') {
-        let startDate = parsedStartDate;
-        let endDate = sub(addISOWeeks(parsedEndDate, 1), { days: 1 })
+        let startDate = parsedStartDate
+        let endDate = sub(addISOQuarters(parsedEndDate, 1), { days: 1 })
         return (
             formatDateHuman(startDate) +
             ' - ' +
             formatDateHuman(endDate) +
             ' (' +
             'Q' +
-            (Math.floor(getISOWeek(parsedEndDate) / 13) + 1) +
+            (Math.floor(getISOWeek(parsedDate) / 13) + 1) +
             ')'
         )
     }
-    
     if (display == 'isoweek') {
-        let startDate = parsedStartDate;
+        let startDate = parsedStartDate
         let endDate = sub(addISOWeeks(parsedEndDate, 1), { days: 1 })
         return (
             formatDateHuman(startDate) +
@@ -70,23 +68,11 @@ export default helper(([startDate, endDate, display]) => {
             formatDateHuman(endDate) +
             ' (' +
             'W' +
-            getISOWeek(parsedEndDate) +
+            getISOWeek(startDate) +
             ')'
         )
     }
 })
-
-function startDateForHistory(dateEnd, display) {
-    if (display == 'isoyear') {
-        return addISOYears(dateEnd, -3)
-    }
-    if (display == 'isoquarter') {
-        return addISOQuarters(dateEnd, -5)
-    }
-    if (display == 'isoweek') {
-        return addISOWeeks(dateEnd, -8)
-    }
-}
 
 function formatDateHuman(d) {
     return format(d, 'dd.MM.yyyy')

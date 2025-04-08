@@ -357,18 +357,15 @@ setComponentTemplate(
         `
         <div class="widget h-full">
 			{{#unless this.editMode}}
-        	<div class="widget-view flex flex-col h-full">
+        	<div class="widget-view h-full">
   				<div class="widget-date">{{dateFormatHelper this.date this.display}}</div>
   				<div class="widget-title">{{this.title}}</div>
-				  <table class="table table-fixed rounded-md flex-grow">
+				  <table class="table table-fixed border-b rounded-md flex-grow">
 					<thead>
 					  <tr>
 						{{#each this.columns as |column|}}
 						  <th>
-				
 							  {{column.name}}
-				  
-
 						  </th>
 						{{/each}}
 					  </tr>
