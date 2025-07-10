@@ -158,8 +158,7 @@ class PushHistoryComponent extends Component {
                                       '|'
                                   )
                               )
-                            : "'Gesamt'",
-                    sortOrder: (d, $) => d[$.sortColumn],
+                            : "'Gesamt'"
                 })
 
             var anyNonNullExpr =
@@ -197,11 +196,35 @@ class PushHistoryComponent extends Component {
     }
 
     get values() {
-        if (this.valueTable) {
-            return this.valueTable.objects()
-        } else {
+        let valueTable = this.valueTable
+
+        if (valueTable == null) {
             return []
         }
+        
+        let data = valueTable.objects();
+        
+		const groupSums = data.reduce((acc, item) => {
+  			acc[item['groupTitle']] = (acc[item['groupTitle']] || 0) + item['value'];
+  			return acc;
+		}, {});
+
+		data.sort((a, b) => {
+			if (this.colorColumn) {
+			  	if (a[this.colorColumn] !== b[this.colorColumn]) {
+					return a[this.colorColumn] - b[this.colorColumn]; 
+			  	}
+			}
+
+		  	return groupSums[a['groupTitle']] - groupSums[b['groupTitle']]; 
+		});
+
+		data.forEach((item, index) => {
+		  item.order = index + 1; // 1-based order
+		});
+
+
+		return data; 
     }
 
     get colorMapping() {
@@ -277,6 +300,21 @@ class PushHistoryComponent extends Component {
         }
     }
 
+    get visibleLegendValues() {
+    	let colorMapping = this.colorMapping; 
+
+		const result = colorMapping.range.reduce((acc, val, index) => {
+		  if (!acc.seen.has(val)) {
+			acc.seen.add(val);
+			acc.visibleValues.push(colorMapping.domain[index]);
+		  }
+		  return acc;
+		}, { seen: new Set(), visibleValues: [] }).visibleValues;
+				console.log(result);
+
+		return result; 
+    }
+
     get vegaTimeUnit() {
         if (this.display == 'isoyear') {
             return 'year'
@@ -316,6 +354,7 @@ class PushHistoryComponent extends Component {
     }
 
     markBarSpec() {
+    	console.log(this.values);
         var spec = {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
             description: 'A simple bar chart with embedded data.',
@@ -325,11 +364,12 @@ class PushHistoryComponent extends Component {
                 values: this.values,
             },
             transform: [
+    			
                 {
                     calculate:
                         "timeOffset('day', toDate(datum.date), if(dayofyear(timeOffset('day', toDate(datum.date), 3))%7<5,6,-1))",
                     as: 'displayDate',
-                },
+                }
             ],
             mark: {
                 type: 'bar',
@@ -351,9 +391,14 @@ class PushHistoryComponent extends Component {
                         domain: this.colorMapping.domain,
                         range: this.colorMapping.range,
                     },
-                    legend: {
-                        title: this.legendTitle,
-                    },
+					legend: {
+						title: this.groupColumns[0],
+						labelExpr:
+						  "split(datum.label, '|')[0]",
+						values: this.visibleLegendValues,
+						orient: "bottom",
+						columns: 3
+					}
                 },
                 y: {
                     field: this.valueColumn,
@@ -363,9 +408,9 @@ class PushHistoryComponent extends Component {
                     },
                 },
                 order: {
-                    field: 'sortOrder',
+                	field: "order"
                 },
-                tooltip: this.tooltip,
+                tooltip: this.tooltip     
             },
         }
         return spec
@@ -414,9 +459,14 @@ class PushHistoryComponent extends Component {
                         domain: this.colorMapping.domain,
                         range: this.colorMapping.range,
                     },
-                    legend: {
-                        title: this.legendTitle,
-                    },
+					legend: {
+						title: this.groupColumns[0],
+						labelExpr:
+						  "split(datum.label, '|')[0]",
+						values: this.visibleLegendValues,
+						orient: "bottom",
+						columns: 3
+					}
                 },
                 y: {
                     field: this.valueColumn,
@@ -424,6 +474,9 @@ class PushHistoryComponent extends Component {
                     axis: {
                         format: formatFor(this.format),
                     },
+                },
+                order: {
+                	field: "order"
                 },
                 tooltip: this.tooltip,
             },

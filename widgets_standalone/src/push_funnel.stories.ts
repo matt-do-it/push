@@ -43,7 +43,7 @@ const meta = {
     },
     argTypes: {
         title: { control: 'text', table: { category: 'Widget options' } },
-        valueColumn: { control: 'text', table: { category: 'Widget options' } },
+        colorColumn: { control: 'text', table: { category: 'Widget options' } },
         display: {
             control: 'select',
             table: { category: 'Widget options' },
@@ -65,6 +65,8 @@ const meta = {
             control: 'object',
             table: { category: 'Data options' },
         },
+        phaseTitles: { control: 'text', table: { category: 'Widget options' } },
+        valueColumns: { control: 'text', table: { category: 'Widget options' } },
         rollup: { control: 'object', table: { category: 'Data options' } },
         derive: { control: 'object', table: { category: 'Data options' } },
         windowFilter: {
@@ -88,12 +90,13 @@ export const Default: Story = {
     args: {
         title: 'Title',
         dateColumn: 'date',
-        phaseTitles: ['Value 1', 'Value 2'],
-        valueColumns: ['value', 'value2'],
+        phaseTitles: 'Value 1, Value 2',
+        valueColumns: 'value,value2',
+        colorColumn: 'color',
         display: 'isoquarter',
         format: 'number',
         filter: null,
-        groupColumns: ['date', 'group'],
+        groupColumns: ['group', 'group2', 'color', 'date'],
         rollup: { value: 'op.sum(d.value)' },
         derive: {},
         windowFilter: null,

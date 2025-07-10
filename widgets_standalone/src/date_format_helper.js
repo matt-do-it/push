@@ -40,14 +40,21 @@ export default helper(([date, display]) => {
         return 'NA'
     }
 
+	
     if (display == 'isoyear') {
         let startDate = parsedDate
         let endDate = sub(addISOYears(parsedDate, 1), { days: 1 })
+        if (endDate > new Date()) {
+        	endDate = new Date(); 
+        }
         return formatDateHuman(startDate) + ' - ' + formatDateHuman(endDate)
     }
     if (display == 'isoquarter') {
         let startDate = parsedDate
         let endDate = sub(addISOQuarters(parsedDate, 1), { days: 1 })
+        if (endDate > new Date()) {
+        	endDate = new Date(); 
+        }
         return (
             formatDateHuman(startDate) +
             ' - ' +
@@ -61,6 +68,9 @@ export default helper(([date, display]) => {
     if (display == 'isoweek') {
         let startDate = parsedDate
         let endDate = sub(addISOWeeks(parsedDate, 1), { days: 1 })
+        if (endDate > new Date()) {
+        	endDate = new Date(); 
+        }
         return (
             formatDateHuman(startDate) +
             ' - ' +

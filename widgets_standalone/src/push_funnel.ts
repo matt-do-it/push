@@ -52,10 +52,6 @@ class PushFunnelComponent extends Component {
             return this.args.colorColumn
         }
 
-        let colorColumn = this.data.groupColumns.filter(function (c) {
-            return c.endsWith('.color')
-        })
-
         if (colorColumn.length > 0) {
             return colorColumn[0]
         }
@@ -80,15 +76,7 @@ class PushFunnelComponent extends Component {
     }
 
     get groupColumns() {
-        return this.data.groupColumns.filter(
-            function (c) {
-                if (c == this.data.dateColumn || c == this.colorColumn) {
-                    return false
-                } else {
-                    return true
-                }
-            }.bind(this)
-        )
+        return this.data.groupColumns
     }
 
     get valueTable() {
@@ -116,12 +104,17 @@ class PushFunnelComponent extends Component {
                 .reify()
                 .params({ groupColumns: this.groupColumns })
                 .derive({
-                    groupTitle: escape((d, $) =>
-                        op.join(
-                            $.groupColumns.map((c) => d[c]),
-                            '|'
-                        )
-                    ),
+                    groupTitle: escape(function(d, $) {
+                    	if ($.groupColumns.length > 0) {
+							return op.join(
+								$.groupColumns.map((c) => d[c]),
+								'|'
+							)
+                    	} else {
+                    		return "Gesamt"
+                    	}
+                    
+                    }),
                 })
 
             var anyNonNullExpr =
@@ -145,6 +138,19 @@ class PushFunnelComponent extends Component {
         }
     }
 
+	// Utility: calculate quantile (0 <= q <= 1)
+	quantile(sortedArr, q) {
+		const pos = (sortedArr.length - 1) * q;
+		const base = Math.floor(pos);
+		const rest = pos - base;
+
+		if (sortedArr[base + 1] !== undefined) {
+			return sortedArr[base] + rest * (sortedArr[base + 1] - sortedArr[base]);
+		} else {
+			return sortedArr[base];
+		}
+	}
+
     get values() {
         let valueTable = this.valueTable
 
@@ -166,11 +172,7 @@ class PushFunnelComponent extends Component {
                         }
                         modified['phase'] = this.phaseTitles[i]
                         modified['value'] = e[this.valueColumns[i]]
-                        modified['groupTitle'] = this.groupColumns
-                            .map(function (g) {
-                                return e[g]
-                            })
-                            .join('|')
+                        modified['groupTitle'] = e['groupTitle']
 
                         elements.push(modified)
                     }
@@ -181,49 +183,41 @@ class PushFunnelComponent extends Component {
             []
         )
 
-        let orderMap = {}
+		const groupSums = data.reduce((acc, item) => {
+  			acc[item['groupTitle']] = (acc[item['groupTitle']] || 0) + item['value'];
+  			return acc;
+		}, {});
 
-        data.forEach(function (x) {
-            if (orderMap[x.groupTitle]) {
-                orderMap[x.groupTitle] = orderMap[x.groupTitle] + x.value
-            } else {
-                orderMap[x.groupTitle] = x.value
-            }
-        })
+		data.sort((a, b) => {
+			if (this.colorColumn) {
+			  	if (a[this.colorColumn] !== b[this.colorColumn]) {
+					return a[this.colorColumn] - b[this.colorColumn]; 
+			  	}
+			}
 
-        const sortValues = Object.values(orderMap)
+		  	return groupSums[a['groupTitle']] - groupSums[b['groupTitle']]; 
+		});
 
-        const sortValuesSorted = sortValues.sort((a, b) => a - b)
+		const quantileSums = {};
+		for (const item of data) {
+  			const phase = item['phase'];
+  			if (!quantileSums[phase]) {
+    			quantileSums[phase] = [];
+  			}
+  			quantileSums[phase].push(item['value']);
+		}
+		
+		const quantiles = {}; 
+		for (let phase in quantileSums) {
+			quantiles[phase] = this.quantile(quantileSums[phase].sort((a, b) => a - b), 0.6);
+		}
 
-        let rankMap = {}
-        sortValues.forEach((value, index) => {
-            rankMap[value] = index
-        })
+		data.forEach((item, index) => {
+		  item.order = index + 1; // 1-based order
+		  item.showLabel = item['value'] > quantiles[item['phase']];
+		});
 
-        let orderMapped = {}
-        for (const [key, value] of Object.entries(orderMap)) {
-            orderMapped[key] = rankMap[value]
-        }
-
-        let showOrderUntil = sortValues.length * (7 / 10)
-
-        let modifiedData = data.map(function (e) {
-            e['order'] = orderMapped[e['groupTitle']]
-            return e
-        })
-
-        return modifiedData
-    }
-
-    get groupTitleTransform() {
-        if (this.titleColumn) {
-            return {
-                calculate: "datum['" + this.titleColumn + "']",
-                as: 'groupTitle',
-            }
-        } else {
-            return { calculate: "'Gesamt'", as: 'groupTitle' }
-        }
+        return data
     }
 
     get valueColumns() {
@@ -247,7 +241,6 @@ class PushFunnelComponent extends Component {
             '#00629A',
             '#71767C',
         ]
-
         if (this.groupColumns.length > 0) {
             let valueTable = this.valueTable
             if (valueTable != null) {
@@ -293,18 +286,32 @@ class PushFunnelComponent extends Component {
                     let range = domains.map(function (e, i) {
                         return colorValues[i % 10]
                     })
+                    
                     return {
                         domain: domains,
                         range: range,
                     }
                 }
             }
-        }
+        } 
 
-        return {
-            domain: ['Gesamt'],
-            range: ['#5EBD82', '#5EBD82'],
-        }
+		return {
+			domain: ['Gesamt'],
+			range: ['#5EBD82', '#5EBD82'],
+		}
+    }
+    
+    get visibleLegendValues() {
+    	let colorMapping = this.colorMapping; 
+
+		const result = colorMapping.range.reduce((acc, val, index) => {
+		  if (!acc.seen.has(val)) {
+			acc.seen.add(val);
+			acc.visibleValues.push(colorMapping.domain[index]);
+		  }
+		  return acc;
+		}, { seen: new Set(), visibleValues: [] }).visibleValues;
+		return result; 
     }
 
     get vegaTimeUnit() {
@@ -322,6 +329,10 @@ class PushFunnelComponent extends Component {
     get tooltip() {
         var tooltips = []
 
+        tooltips.push({
+            field: 'displayDate',
+            type: 'temporal',
+        })
         this.data.groupColumns.forEach(
             function (e) {
                 if (e != this.colorColumn && e != this.data.dateColumn) {
@@ -359,11 +370,34 @@ class PushFunnelComponent extends Component {
             width: 'container',
             height: 'container',
             data: { values: this.values },
-            mark: { type: 'bar', tooltip: true },
+			transform: [
+    			{
+      				"aggregate": [{"op": "sum", "field": "value", "as": "value"}],
+      				"groupby": [
+      					...this.data.groupColumns, 
+      					"groupTitle", 
+      					"phase", 
+      					"showLabel"
+      				]
+    			},
+                {
+                    calculate:
+                        "timeOffset('day', toDate(datum.date), if(dayofyear(timeOffset('day', toDate(datum.date), 3))%7<5,6,-1))",
+                    as: 'displayDate',
+                },
+				{
+      				"calculate": "[split(datum.groupTitle, '|')[0], format(datum.value, '" + formatFor('number') + "')]",
+      				"as": "groupLabel"
+    			}
+ 			],
+            mark: { 
+            	type: 'bar', 
+            	tooltip: true
+            },
             encoding: {
                 order: {
                     field: 'order',
-                },
+                }
             },
             layer: [
                 {
@@ -379,29 +413,51 @@ class PushFunnelComponent extends Component {
                             },
                             legend: {
                                 title: this.legendTitle,
-                            },
+                                labelExpr:
+                                  "split(datum.label, '|')[0]",
+                                values: this.visibleLegendValues,
+                                orient: "bottom",
+                                columns: 3
+                            }
                         },
                         x: {
                             field: 'phase',
                             sort: this.phaseTitles,
+                            axis: {
+                              labelAngle: 0
+                            }
                         },
                         y: {
                             field: 'value',
                             aggregate: 'sum',
                             stack: 'normalize',
                         },
-                        tooltip: this.tooltip,
+                        tooltip: this.tooltip
                     },
                 },
-
                 {
                     mark: {
                         type: 'text',
                         opacity: 0.9,
                         color: 'white',
+                        baseline: 'middle'
                     },
                     encoding: {
-                        text: { field: 'groupTitle', type: 'nominal' },
+						detail: [
+							{
+								"field": "showLabel"
+							}, {
+								"field": "groupTitle"
+							}
+						],
+                        text: { 
+                        	value: '', 
+                        	type: 'nominal',
+                        	condition: {
+                        		test: "datum.showLabel",
+                        		field: "groupLabel"
+                        	}
+                        },
                         x: {
                             field: 'phase',
                             sort: this.phaseTitles,
@@ -413,12 +469,12 @@ class PushFunnelComponent extends Component {
                             bandPosition: 0.5,
                         },
                     },
-                },
-            ],
+                }
+            ]
         }
 
         const vegaSpec = compile(liteSpec, {
-            config: vegaConfig(),
+            config: vegaConfig()
         }).spec
 
         return vegaSpec
@@ -451,7 +507,6 @@ setComponentTemplate(
                 trendFormatHelper,
                 trendColorHelper,
                 dateFormatHelper,
-
                 InputComponent,
             },
         }

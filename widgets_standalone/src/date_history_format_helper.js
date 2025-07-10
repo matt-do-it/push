@@ -55,7 +55,7 @@ export default helper(([startDate, endDate, display]) => {
             formatDateHuman(endDate) +
             ' (' +
             'Q' +
-            (Math.floor(getISOWeek(parsedDate) / 13) + 1) +
+            (Math.floor(getISOWeek(endDate) / 13) + 1) +
             ')'
         )
     }
